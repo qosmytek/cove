@@ -90,7 +90,7 @@ The constraints every feature must satisfy.
 | [Glossary](reference/glossary.md) | Plain-language definitions of every acronym. |
 | [Risk Register](reference/risks.md) | Top risks, impact, and mitigations. |
 | [FAQ](reference/faq.md) | Anticipated questions from users and stakeholders. |
-| [Source Brief](reference/source-brief.md) | The original product brief, verbatim. |
+| [Source Brief](reference/source-brief.md) | The original product brief. |
 
 ---
 

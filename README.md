@@ -58,7 +58,7 @@ the **[Roadmap](docs/product/roadmap.md)**.
 - Architectural choices live as numbered **[ADRs](docs/architecture/decisions/)**. When a decision
   changes we add a *new* ADR rather than rewriting history.
 - Everything traces back to the originating **[source brief](docs/reference/source-brief.md)**, kept
-  verbatim inside the repo so the project is self-contained.
+  in the repo so the project is self-contained.
 
 ## Guiding constraints (the non-negotiables)
 

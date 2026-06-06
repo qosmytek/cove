@@ -51,7 +51,7 @@ Every doc starts with this header block:
 **Two deliberate exceptions:** [ADRs](docs/architecture/decisions/README.md) use a dated variant
 (`**Status:** Accepted · **Date:** … · ← [ADR index](./README.md)`) — a decision record is fixed at its
 date, not "last updated." Landing/index pages (the project [README](README.md), the
-[docs index](docs/README.md)) and the verbatim [source brief](docs/reference/source-brief.md) instead
+[docs index](docs/README.md)) and the [source brief](docs/reference/source-brief.md) instead
 state overall **project phase** and omit the `Section` line.
 
 ## 3. Adding a feature spec
