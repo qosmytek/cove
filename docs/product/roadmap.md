@@ -10,11 +10,32 @@ it on a real mid-range phone, then build outward. Dates are indicative and firm 
 ## Phase 0 — Riskiest-first prototype (starting 2026-06)
 **Goal:** prove `ffmpeg.wasm` can compress a representative video acceptably **on a mid-range phone**,
 in a worker, with the engine lazy-loaded.
+
+**Prerequisites:**
+- Serve the prototype with **COOP/COEP** (cross-origin isolation) so the multi-threaded path can be
+  exercised — validates the [PRD assumption](./prd.md#8-dependencies--assumptions) and
+  [ADR-0002](../architecture/decisions/0002-web-workers-for-compute.md); engine build per
+  [ADR-0006](../architecture/decisions/0006-ffmpeg-build-and-threading.md).
+- Measure on a **physical Samsung Galaxy A54 5G** (remote debugging / manual DevTools); automated and
+  device-farm runs are deferred to Phase 1 ([Testing Strategy](../engineering/testing-strategy.md)).
+- Pick a **representative, license-clear test clip** (target: ~60 s, 1080p, H.264).
+
 **Exit criteria:**
-- Measured compress time and memory on the reference device are acceptable.
+- Compress performance on the reference device clears the **provisional bar** below.
 - Engine loads only on intent; size is known and disclosed.
 - Confirmed: zero network egress of file bytes.
-- Cross-origin isolation / `SharedArrayBuffer` path validated (or a fallback identified).
+- Cross-origin isolation / `SharedArrayBuffer` path validated, **and** the single-threaded fallback
+  exercised ([ADR-0006](../architecture/decisions/0006-ffmpeg-build-and-threading.md)).
+
+**Provisional performance bar** (the go/no-go; exact numbers are *measured* in Phase 0, then ratified
+into the [performance budget](../quality/performance-budget.md)):
+- **Input:** the representative clip above.
+- **Measure:** wall-clock compress time, peak memory (must **not** OOM), and output size reduction at
+  comparable quality.
+- **Provisional pass:** the clip compresses to completion on the Samsung Galaxy A54 5G **without OOM**
+  and yields a **meaningfully smaller** file (initial goal **≥ ~50%** at comparable quality). The
+  **first on-device run sets the time and peak-memory thresholds**, which are then ratified into the
+  performance budget.
 
 > **If Phase 0 fails**, we re-pick the flagship *before* building UI — see [Scope](./scope.md).
 

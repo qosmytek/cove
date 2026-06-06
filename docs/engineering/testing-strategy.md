@@ -46,6 +46,7 @@ it on a real *mid-range phone*, not a laptop.
 Use small, license-clear media/data fixtures; **never commit real user content.**
 
 ## Open questions
-- E2E runner (e.g., Playwright) and how we automate real-device runs on the reference phone.
+- E2E runner (e.g., Playwright) and automated real-device runs — deferred past Phase 0, which measures
+  manually on a physical Samsung Galaxy A54 5G.
 
 See also: [CI/CD](./ci-cd.md) · [Performance Budget](../quality/performance-budget.md)
