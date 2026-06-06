@@ -8,7 +8,7 @@
 
 **Status:** 📐 Pre-development (documentation phase) · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
 
-> **Naming:** "Cove" is the product/brand; the repository folder stays `local-first-browser-tool`. See [Brand](docs/product/brand.md).
+> **Naming:** "Cove" is the product/brand and the repository folder name. See [Brand](docs/product/brand.md).
 
 This repository currently contains **product documentation only**. No application code exists yet.
 These documents define *what* we are building and *why*, so development can begin from a shared,

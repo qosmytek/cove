@@ -13,7 +13,7 @@ as an umbrella over many tools.
 
 - **Product / brand name:** Cove
 - **Category descriptor:** "a local-first browser tool" (use after the name on first mention)
-- **Repository folder:** stays `local-first-browser-tool` (descriptive; intentionally not renamed)
+- **Repository folder:** `cove` (matches the product name)
 
 ## Tagline
 **"Real tools. Nothing leaves your device."**

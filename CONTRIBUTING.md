@@ -67,7 +67,7 @@ Add a row to the [feature index](docs/features/README.md) and map it to a source
   don't hype.
 - **Wrap prose at ~100 columns** (one sentence per line is also fine — cleaner diffs).
 - **Tables** for option/decision matrices; **checklists** for acceptance criteria.
-- **Product name is "Cove";** the repo folder stays `local-first-browser-tool`.
+- **Product name is "Cove",** matching the repo folder `cove`.
 
 ## 5. Verifying docs
 
