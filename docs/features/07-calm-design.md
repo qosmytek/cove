@@ -1,7 +1,7 @@
 # 07 · Calm by Design
 
 > **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
-> **Section:** [Features](./README.md) · **Source idea:** (3) · **In v1:** ✅
+> **Section:** [Features](./README.md) · **In v1:** ✅
 > ← [Feature index](./README.md)
 
 ## Summary

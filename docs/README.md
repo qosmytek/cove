@@ -39,19 +39,19 @@ The *what* and the *why*.
 
 ## 2. Features
 
-One focused spec per capability. Numbers in parentheses map to the [source brief](reference/source-brief.md).
+One focused spec per capability, each tracing back to the [source brief](reference/source-brief.md).
 
-| Document | Source idea |
-| -------- | ----------- |
+| Document | Covers |
+| -------- | ------ |
 | [Feature index](features/README.md) | Status table for all capabilities. |
-| [01 · Local-First Core](features/01-local-first-core.md) | (1) WASM compute, OPFS, Web Workers. |
-| [02 · Single-File App](features/02-single-file-app.md) | (2) One self-contained `.html`. |
-| [03 · Encrypted Vault](features/03-encrypted-vault.md) | (4) Web Crypto → IndexedDB. |
-| [04 · On-Device AI](features/04-on-device-ai.md) | (8) WebGPU inference. |
-| [05 · Big-Data Exploration](features/05-big-data-exploration.md) | (22) DuckDB-WASM over Parquet. |
-| [06 · Offline-First PWA](features/06-offline-pwa.md) | (14) Service worker, installable. |
-| [07 · Calm by Design](features/07-calm-design.md) | (3) No tracking, no dark patterns. |
-| [08 · Command Palette](features/08-command-palette.md) | (19) Keyboard-driven control. |
+| [01 · Local-First Core](features/01-local-first-core.md) | WASM compute, OPFS, Web Workers. |
+| [02 · Single-File App](features/02-single-file-app.md) | One self-contained `.html`. |
+| [03 · Encrypted Vault](features/03-encrypted-vault.md) | Web Crypto → IndexedDB. |
+| [04 · On-Device AI](features/04-on-device-ai.md) | WebGPU inference. |
+| [05 · Big-Data Exploration](features/05-big-data-exploration.md) | DuckDB-WASM over Parquet. |
+| [06 · Offline-First PWA](features/06-offline-pwa.md) | Service worker, installable. |
+| [07 · Calm by Design](features/07-calm-design.md) | No tracking, no dark patterns. |
+| [08 · Command Palette](features/08-command-palette.md) | Keyboard-driven control. |
 
 ## 3. Architecture
 

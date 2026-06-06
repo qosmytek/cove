@@ -59,7 +59,7 @@ state overall **project phase** and omit the `Section` line.
 Copy [docs/features/01-local-first-core.md](docs/features/01-local-first-core.md) and keep its shape:
 **Summary → User value → How we build it → What to watch out for → Requirements →
 Capability detection & fallback → Acceptance criteria → Dependencies → Open questions.**
-Add a row to the [feature index](docs/features/README.md) and map it to a source-brief idea number.
+Add a row to the [feature index](docs/features/README.md).
 
 ## 4. Style
 

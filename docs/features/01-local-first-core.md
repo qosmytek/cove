@@ -1,7 +1,7 @@
 # 01 · Local-First Core
 
 > **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
-> **Section:** [Features](./README.md) · **Source idea:** (1) · **In v1:** ✅ core
+> **Section:** [Features](./README.md) · **In v1:** ✅ core
 > ← [Feature index](./README.md)
 
 ## Summary

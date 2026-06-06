@@ -1,12 +1,12 @@
 # 08 · Command Palette
 
 > **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
-> **Section:** [Features](./README.md) · **Source idea:** (19) · **In v1:** ✅ (should)
+> **Section:** [Features](./README.md) · **In v1:** ✅ (should)
 > ← [Feature index](./README.md)
 
 ## Summary
 Keyboard-driven, power-user control: a single palette (e.g., ⌘K / Ctrl-K) to find and run any action.
-This spec captures only what Cove needs from source-brief idea (19).
+This spec captures only what Cove needs from the source brief.
 
 ## User value
 Sam and other keyboard users drive the whole app without reaching for the mouse — pick a file, choose a
