@@ -37,6 +37,11 @@ manipulates.
 - [ ] No misdirection or misleading hierarchy
 - [ ] No hidden costs
 
+## Capability detection & fallback
+No special browser capability is required — this is a stance, not an engine. `prefers-reduced-motion`
+and `prefers-color-scheme` are honored where supported and fall back to sensible, motion-free defaults
+where they aren't (CD-5). See [Progressive Enhancement](../quality/progressive-enhancement.md).
+
 ## Acceptance criteria
 - [ ] The network panel shows no third-party or analytics requests.
 - [ ] No consent banner appears anywhere.
