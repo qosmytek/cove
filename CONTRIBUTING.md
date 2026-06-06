@@ -48,6 +48,12 @@ Every doc starts with this header block:
 > **Section:** [Section](./) · ← [Documentation Index](../README.md)
 ```
 
+**Two deliberate exceptions:** [ADRs](docs/architecture/decisions/README.md) use a dated variant
+(`**Status:** Accepted · **Date:** … · ← [ADR index](./README.md)`) — a decision record is fixed at its
+date, not "last updated." Landing/index pages (the project [README](README.md), the
+[docs index](docs/README.md)) and the verbatim [source brief](docs/reference/source-brief.md) instead
+state overall **project phase** and omit the `Section` line.
+
 ## 3. Adding a feature spec
 
 Copy [docs/features/01-local-first-core.md](docs/features/01-local-first-core.md) and keep its shape:
