@@ -1,0 +1,55 @@
+# Performance Budget
+
+> **Status:** Stable (budget ratified 2026-06-06) · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Section:** [Quality](./) · ← [Documentation Index](../README.md)
+
+**This is the most important quality document.** Payload weight is the #1 risk to the product
+([Risks](../reference/risks.md)): a "fast" tool that ships 3 MB of JavaScript isn't fast. WASM engines
+and AI weights can dwarf the app, so we budget bytes like money and **enforce the budget in CI**.
+
+## The five rules (from the brief)
+1. **Lazy-load** heavy engines/weights **behind explicit user intent** — never in the initial payload.
+2. **Cache aggressively** so the first load is the only slow load.
+3. **Capability-detect** (WebGPU, SharedArrayBuffer, OPFS) and pick the lightest viable path.
+4. **Always keep a lighter fallback.**
+5. **Measure on a real mid-range phone**, not a laptop.
+
+## Budgets (ratified 2026-06-06)
+> **Decided** by Victor Senna Seleimend on 2026-06-06. These are committed budgets, measured against the
+> [reference device](../engineering/testing-strategy.md#device--browser-matrix) (Samsung Galaxy A54 5G)
+> and the CI mobile proxy. Changing any number requires an
+> [ADR](../architecture/decisions/README.md) — never a silent regression.
+
+| Metric | Budget | Notes |
+| ------ | ------ | ----- |
+| Initial JS (compressed) | **≤ 150 KB** | Shell only; no engine. |
+| Initial total transfer (compressed) | **≤ 250 KB** | HTML + CSS + JS + icons. |
+| Web fonts | **0 KB** | System fonts only ([Calm by Design](../features/07-calm-design.md)). |
+| Third-party scripts | **0** | None, ever. |
+| Time to Interactive (mid-range phone, cold) | **≤ 3 s** | Shell usable before any engine. |
+| Largest Contentful Paint (LCP) | **≤ 2.5 s** | Core Web Vital; mid-range, Slow 4G. |
+| Total Blocking Time (TBT) | **≤ 200 ms** | Interactivity proxy; main thread kept clear. |
+| Cumulative Layout Shift (CLS) | **≤ 0.1** | Visual stability. |
+| Main-thread long tasks during compute | **≈ 0** | Compute is in [workers](../architecture/decisions/0002-web-workers-for-compute.md). |
+| Heavy engine in initial payload | **0 bytes** | Always lazy + intent-gated. |
+
+## Lazy-loaded assets (disclosed, not counted in initial load)
+These are large by nature; the rule is **disclose the size and load only on intent**, then cache.
+
+| Asset | Rough order of magnitude | Rule |
+| ----- | ------------------------ | ---- |
+| `ffmpeg.wasm` core | tens of MB | Load when a compression starts; show size first. |
+| AI model weights | hundreds of MB | Phase 4; explicit opt-in + size disclosure; cache after first load. |
+
+## Enforcement in CI
+- **Bundle-size gate:** fail the build if initial JS/total exceeds budget (e.g., size-limit / bundlesize).
+- **Lighthouse CI** (or equivalent) with performance assertions on a throttled, mid-range profile.
+- **"No engine in initial payload" assertion:** verify heavy WASM is not referenced by the entry chunk.
+- See [CI/CD](../engineering/ci-cd.md) — budgets are **blocking** gates.
+
+## When the budget and a feature conflict
+The budget wins by default. Exceeding it requires an explicit, recorded decision (an
+[ADR](../architecture/decisions/README.md)) — never a silent regression.
+
+See also: [Progressive Enhancement](./progressive-enhancement.md) · [Risks](../reference/risks.md) ·
+[Local-First Core](../features/01-local-first-core.md)
