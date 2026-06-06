@@ -6,7 +6,7 @@
 
 ## Summary
 Keyboard-driven, power-user control: a single palette (e.g., ⌘K / Ctrl-K) to find and run any action.
-*(Covered in depth under "Product B" in the source brief; here we capture what Product A needs.)*
+This spec captures only what Cove needs from source-brief idea (19).
 
 ## User value
 Sam and other keyboard users drive the whole app without reaching for the mouse — pick a file, choose a
