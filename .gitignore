@@ -1,0 +1,59 @@
+# --- Dependencies ---
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/versions
+
+# --- Build output ---
+dist/
+dist-ssr/
+build/
+out/
+*.local
+
+# --- Vite / bundler cache ---
+.vite/
+.cache/
+*.tsbuildinfo
+
+# --- Tests / coverage ---
+coverage/
+playwright-report/
+test-results/
+.nyc_output/
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+# License-signing private key MUST never be committed (see docs/product/monetization.md)
+*.pem
+*.key
+secrets/
+
+# --- Large local engine/model caches (fetched at runtime, never committed) ---
+/models/
+*.weights
+*.onnx
+
+# --- Editors / OS ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
