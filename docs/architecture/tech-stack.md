@@ -14,7 +14,7 @@ Chosen technologies and the reason for each. Significant or contested choices ar
 ## Compute (WebAssembly)
 | Need | Choice | Notes |
 | ---- | ------ | ----- |
-| Media (video compressor, v1) | **`ffmpeg.wasm`** | Riskiest/heaviest engine; lazy-loaded on intent. |
+| Media (video compressor, v1) | **`ffmpeg.wasm`** | Riskiest/heaviest engine; lazy-loaded on intent. Build/threading per [ADR-0006](./decisions/0006-ffmpeg-build-and-threading.md). |
 | Data / SQL | **DuckDB-WASM**, `sql.js` | Analytical SQL over Parquet — see [feature 05](../features/05-big-data-exploration.md). |
 | Python libraries | **Pyodide** | Only if/when a tool needs the Python ecosystem. |
 | On-device AI | **`transformers.js`** / **WebLLM** on **WebGPU** | Phase 4; weights cached after first load. |
@@ -56,4 +56,3 @@ or accessibility.
 ## Open decisions (future ADRs)
 - UI framework (or none).
 - Test runner + E2E tooling — see [Testing Strategy](../engineering/testing-strategy.md).
-- Exact `ffmpeg.wasm` build/flavor and threading config.

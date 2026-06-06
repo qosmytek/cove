@@ -17,10 +17,10 @@ Each ADR follows **Context → Decision → Consequences**, with a status line. 
 | [0003](./0003-opfs-and-fs-access-api.md) | Use OPFS + File System Access API for files | Accepted |
 | [0004](./0004-single-file-build-target.md) | Support a single-file `.html` build target | Accepted |
 | [0005](./0005-no-server-no-account.md) | No server-side processing, no accounts | Accepted |
+| [0006](./0006-ffmpeg-build-and-threading.md) | `ffmpeg.wasm` build + threading (multi-threaded core, single-threaded fallback) | Accepted |
 
 ## Proposed / future
 - UI framework (or none)
-- Threading flavor for `ffmpeg.wasm`
 - Test / E2E tooling
 
 New ADRs copy the structure of [ADR-0001](./0001-wasm-compute-engines.md).
