@@ -131,6 +131,7 @@ multi-tool breadth, and sync.
   [Monetization](./monetization.md).
 
 **Still open** (tracked in [Risks](../reference/risks.md) and each feature's "Open questions"):
-- Exact CSP `connect-src` allowlist for [feature 05](../features/05-big-data-exploration.md).
+- Exact CSP `connect-src` allowlist for [feature 05](../features/05-big-data-exploration.md) — tracked in
+  [Privacy & Security](../quality/privacy-security.md#open-questions).
 - Vault recovery model ([feature 03](../features/03-encrypted-vault.md)).
 - First on-device-AI tool ([feature 04](../features/04-on-device-ai.md)).
