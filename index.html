@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cove — Phase 0 compressor spike</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+      h1 { font-size: 1.25rem; }
+      #status { font-size: .85rem; opacity: .8; }
+      .row { display: flex; gap: .5rem; align-items: center; margin: 1rem 0; flex-wrap: wrap; }
+      button { padding: .4rem .9rem; }
+      progress { width: 100%; height: 1rem; }
+      pre#log { background: #8881; padding: .5rem; height: 9rem; overflow: auto; font-size: .8rem; white-space: pre-wrap; }
+      #result a { font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <h1>Cove — Phase 0 compressor spike</h1>
+    <p id="status">Detecting capabilities…</p>
+    <p>Pick a video; it is compressed entirely on your device with <code>ffmpeg.wasm</code>. Nothing is uploaded.</p>
+    <div class="row">
+      <input id="file" type="file" accept="video/*" />
+    </div>
+    <div class="row">
+      <button id="compress" disabled>Compress</button>
+      <button id="cancel" disabled>Cancel</button>
+    </div>
+    <progress id="progress" max="1" value="0"></progress>
+    <div id="result"></div>
+    <pre id="log"></pre>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

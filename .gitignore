@@ -47,6 +47,8 @@ secrets/
 /models/
 *.weights
 *.onnx
+# Vendored ffmpeg.wasm cores, copied from node_modules by scripts/copy-ffmpeg-core.mjs
+public/ffmpeg/
 
 # --- Editors / OS ---
 .vscode/*
