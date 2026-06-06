@@ -6,13 +6,14 @@
 >
 > _Real tools. Nothing leaves your device._
 
-**Status:** 📐 Pre-development (documentation phase) · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+**Status:** 🛠 Phase 0 — riskiest-first prototype · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
 
 > **Naming:** "Cove" is the product/brand and the repository folder name. See [Brand](docs/product/brand.md).
 
-This repository currently contains **product documentation only**. No application code exists yet.
-These documents define *what* we are building and *why*, so development can begin from a shared,
-written foundation rather than from assumptions.
+This repository contains the product documentation **and** an early **Phase 0 prototype** — a browser
+video-compressor spike (see [running & measuring it](docs/engineering/phase-0-measurement.md)). The
+documents still define *what* we are building and *why*; the prototype exists only to answer the
+riskiest-first go/no-go before we build the full MVP.
 
 ---
 
