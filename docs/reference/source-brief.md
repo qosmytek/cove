@@ -44,7 +44,7 @@ The privacy stance makes anti-engagement natural: no tracking, no dark patterns,
 *Watch out:* spend the saved complexity budget on typography so "minimal" reads as intentional rather than unfinished.
 
 ### Also draws on…
-**Command-palette navigation** (covered in depth under Product B) for keyboard-driven power-user control.
+**Command-palette navigation** for keyboard-driven power-user control.
 
 ## Why it's disruptive
 
