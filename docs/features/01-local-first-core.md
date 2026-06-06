@@ -51,5 +51,7 @@ Access API. Where missing: fall back to single-threaded WASM, in-memory buffers,
 [Offline PWA](./06-offline-pwa.md) (for caching engines after first use).
 
 ## Open questions
-- Which exact mid-range reference device(s)?
 - One shared `ffmpeg.wasm` build for all media tools, or tailored builds to save bytes?
+
+The reference device is **settled** — Samsung Galaxy A54 5G — see [PRD §10](../product/prd.md#10-decisions--open-questions)
+and the [device matrix](../engineering/testing-strategy.md#device--browser-matrix).
