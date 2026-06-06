@@ -1,4 +1,4 @@
-# 05 · In-Browser Big-Data Exploration
+# 05 · Big-Data Exploration
 
 > **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
 > **Section:** [Features](./README.md) · **Source idea:** (22) · **In v1:** ⏳ Phase 3
