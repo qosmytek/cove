@@ -4,6 +4,7 @@
 import { detectCapabilities, chooseCore, CORE_APPROX_MB } from './capabilities';
 import { reductionPct, heapMB, formatBytes, type CompressMetrics } from './measure';
 import { DEFAULT_OPTIONS, PRESETS, type CompressOptions } from './options';
+import { probeWebCodecs } from './webcodecs';
 
 const byId = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -21,6 +22,7 @@ const resultEl = byId<HTMLDivElement>('result');
 const presetSel = byId<HTMLSelectElement>('preset');
 const crfInput = byId<HTMLInputElement>('crf');
 const heightSel = byId<HTMLSelectElement>('height');
+const webcodecsEl = byId<HTMLDivElement>('webcodecs');
 
 const caps = detectCapabilities();
 const core = chooseCore(caps);
@@ -38,6 +40,20 @@ for (const p of PRESETS) {
 presetSel.value = DEFAULT_OPTIONS.preset;
 crfInput.value = String(DEFAULT_OPTIONS.crf);
 heightSel.value = String(DEFAULT_OPTIONS.height);
+
+// Phase 0: probe the WebCodecs (hardware) path we're evaluating as the fast lane.
+void probeWebCodecs().then((results) => {
+  webcodecsEl.replaceChildren();
+  const heading = document.createElement('strong');
+  heading.textContent = 'WebCodecs probe:';
+  const list = document.createElement('ul');
+  for (const r of results) {
+    const li = document.createElement('li');
+    li.textContent = `${r.supported ? '✓' : '✗'} ${r.label}${r.note ? ` — ${r.note}` : ''}`;
+    list.appendChild(li);
+  }
+  webcodecsEl.append(heading, list);
+});
 
 let selectedFile: File | null = null;
 let running: { terminate: () => void } | null = null;

@@ -12,6 +12,8 @@
       .row { display: flex; gap: .5rem; align-items: center; margin: 1rem 0; flex-wrap: wrap; }
       button { padding: .4rem .9rem; }
       label { display: inline-flex; gap: .3rem; align-items: center; }
+      #webcodecs { font-size: .85rem; }
+      #webcodecs ul { margin: .25rem 0; padding-left: 1.2rem; }
       progress { width: 100%; height: 1rem; }
       pre#log { background: #8881; padding: .5rem; height: 9rem; overflow: auto; font-size: .8rem; white-space: pre-wrap; }
       #result a { font-weight: 600; }
@@ -20,6 +22,7 @@
   <body>
     <h1>Cove — Phase 0 compressor spike</h1>
     <p id="status">Detecting capabilities…</p>
+    <div id="webcodecs"></div>
     <p>Pick a video; it is compressed entirely on your device with <code>ffmpeg.wasm</code>. Nothing is uploaded.</p>
     <div class="row">
       <input id="file" type="file" accept="video/*" />
