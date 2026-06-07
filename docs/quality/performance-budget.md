@@ -38,8 +38,20 @@ These are large by nature; the rule is **disclose the size and load only on inte
 
 | Asset | Rough order of magnitude | Rule |
 | ----- | ------------------------ | ---- |
-| `ffmpeg.wasm` core | tens of MB | Load when a compression starts; show size first. |
+| WebCodecs (fast path) | ~0 (built-in OS codecs) | No download; used when hardware H.264 is available. |
+| `ffmpeg.wasm` core (fallback) | tens of MB | Loaded only when WebCodecs isn't available; show size first. |
 | AI model weights | hundreds of MB | Phase 4; explicit opt-in + size disclosure; cache after first load. |
+
+## Compute performance (the v1 compressor)
+Ratified 2026-06-07 from the
+[Phase 0 outcome](../product/roadmap.md#phase-0--riskiest-first-prototype-starting-2026-06):
+- **WebCodecs fast path — gated target:** compress a representative ~1-minute 1080p H.264 clip on the
+  [reference device](../engineering/testing-strategy.md#device--browser-matrix) at **≈ real-time or
+  faster** (Phase 0 proxy: ~22 s for a ~50 s clip).
+- **`ffmpeg.wasm` fallback — best-effort, not gated:** must complete **without OOM**, with progress and
+  a working cancel; it is materially slower (~4× real-time on the proxy) and is the compatibility path,
+  not the performance target.
+- **Memory:** stay within the device's safe envelope; surface limits / stream large inputs (FR-V7).
 
 ## Enforcement in CI
 - **Bundle-size gate:** fail the build if initial JS/total exceeds budget (e.g., size-limit / bundlesize).
