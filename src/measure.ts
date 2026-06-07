@@ -5,6 +5,9 @@ import type { CoreKind } from './capabilities';
 
 export interface CompressMetrics {
   core: CoreKind;
+  preset: string;
+  crf: number;
+  height: number;
   inputBytes: number;
   outputBytes: number;
   reductionPct: number;

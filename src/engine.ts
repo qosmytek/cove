@@ -5,6 +5,7 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import type { CoreKind } from './capabilities';
+import type { CompressOptions } from './options';
 
 export interface LoadHandlers {
   onLog?: (line: string) => void;
@@ -36,15 +37,19 @@ export async function loadEngine(kind: CoreKind, handlers: LoadHandlers = {}): P
   return ffmpeg;
 }
 
-/** The one representative Phase 0 job: scale to 720p, re-encode H.264 (CRF 28) + AAC. */
-export async function compress(ffmpeg: FFmpeg, file: File): Promise<Uint8Array<ArrayBuffer>> {
+/** The representative Phase 0 job: scale to the chosen height, re-encode H.264 + AAC. */
+export async function compress(
+  ffmpeg: FFmpeg,
+  file: File,
+  opts: CompressOptions,
+): Promise<Uint8Array<ArrayBuffer>> {
   const input = 'input';
   const output = 'output.mp4';
   await ffmpeg.writeFile(input, await fetchFile(file));
   await ffmpeg.exec([
     '-i', input,
-    '-vf', 'scale=-2:720',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '28',
+    '-vf', `scale=-2:${opts.height}`,
+    '-c:v', 'libx264', '-preset', opts.preset, '-crf', String(opts.crf),
     '-c:a', 'aac', '-b:a', '128k',
     '-y', output,
   ]);

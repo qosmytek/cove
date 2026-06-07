@@ -3,6 +3,7 @@
 
 import { detectCapabilities, chooseCore, CORE_APPROX_MB } from './capabilities';
 import { reductionPct, heapMB, formatBytes, type CompressMetrics } from './measure';
+import { DEFAULT_OPTIONS, PRESETS, type CompressOptions } from './options';
 
 const byId = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -17,12 +18,26 @@ const cancelBtn = byId<HTMLButtonElement>('cancel');
 const progressEl = byId<HTMLProgressElement>('progress');
 const logEl = byId<HTMLPreElement>('log');
 const resultEl = byId<HTMLDivElement>('result');
+const presetSel = byId<HTMLSelectElement>('preset');
+const crfInput = byId<HTMLInputElement>('crf');
+const heightSel = byId<HTMLSelectElement>('height');
 
 const caps = detectCapabilities();
 const core = chooseCore(caps);
 statusEl.textContent =
   `crossOriginIsolated: ${caps.crossOriginIsolated} · SharedArrayBuffer: ${caps.sharedArrayBuffer} · ` +
   `engine: ${core === 'mt' ? 'multi-threaded' : 'single-threaded (fallback)'}`;
+
+// Seed the controls from the defaults (single source of truth in options.ts).
+for (const p of PRESETS) {
+  const opt = document.createElement('option');
+  opt.value = p;
+  opt.textContent = p;
+  presetSel.appendChild(opt);
+}
+presetSel.value = DEFAULT_OPTIONS.preset;
+crfInput.value = String(DEFAULT_OPTIONS.crf);
+heightSel.value = String(DEFAULT_OPTIONS.height);
 
 let selectedFile: File | null = null;
 let running: { terminate: () => void } | null = null;
@@ -65,11 +80,20 @@ compressBtn.addEventListener('click', async () => {
     running = ffmpeg;
     log(`Engine loaded in ${(loadMs / 1000).toFixed(1)}s (one-time; cached after). Compressing…`);
 
+    const opts: CompressOptions = {
+      preset: presetSel.value,
+      crf: Number(crfInput.value),
+      height: Number(heightSel.value),
+    };
+    log(`Settings: preset=${opts.preset} · crf=${opts.crf} · height=${opts.height}p`);
     const encodeStart = performance.now();
-    const output = await compress(ffmpeg, file);
+    const output = await compress(ffmpeg, file, opts);
     const encodeMs = Math.round(performance.now() - encodeStart);
     const metrics: CompressMetrics = {
       core,
+      preset: opts.preset,
+      crf: opts.crf,
+      height: opts.height,
       inputBytes: file.size,
       outputBytes: output.byteLength,
       reductionPct: reductionPct(file.size, output.byteLength),

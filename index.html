@@ -11,6 +11,7 @@
       #status { font-size: .85rem; opacity: .8; }
       .row { display: flex; gap: .5rem; align-items: center; margin: 1rem 0; flex-wrap: wrap; }
       button { padding: .4rem .9rem; }
+      label { display: inline-flex; gap: .3rem; align-items: center; }
       progress { width: 100%; height: 1rem; }
       pre#log { background: #8881; padding: .5rem; height: 9rem; overflow: auto; font-size: .8rem; white-space: pre-wrap; }
       #result a { font-weight: 600; }
@@ -22,6 +23,17 @@
     <p>Pick a video; it is compressed entirely on your device with <code>ffmpeg.wasm</code>. Nothing is uploaded.</p>
     <div class="row">
       <input id="file" type="file" accept="video/*" />
+    </div>
+    <div class="row">
+      <label>Preset <select id="preset"></select></label>
+      <label>CRF <input id="crf" type="number" min="0" max="51" step="1" /></label>
+      <label>Height
+        <select id="height">
+          <option value="480">480p</option>
+          <option value="720">720p</option>
+          <option value="1080">1080p</option>
+        </select>
+      </label>
     </div>
     <div class="row">
       <button id="compress" disabled>Compress</button>

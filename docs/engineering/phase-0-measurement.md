@@ -37,9 +37,9 @@ Target: **Samsung Galaxy A54 5G**, a representative **~60 s 1080p H.264** clip.
    treat-as-secure flag) for the device test.
 2. On the phone (Chrome), connect to your laptop and use **`chrome://inspect`** to watch console/network.
 3. Confirm `crossOriginIsolated === true` and the multi-threaded path is active.
-4. Run the compression and record: **wall-clock time** (logged), **peak memory / any OOM** (watch for
-   crashes/reloads; `performance.memory` is coarse — cross-check Chrome's task manager), and **size
-   reduction** (logged).
+4. Run the compression and record (all logged): **encode time** — the log separates the one-time engine
+   load from encode, so use the encode figure — **peak memory / any OOM** (watch for crashes/reloads;
+   `performance.memory` is coarse, so cross-check Chrome's task manager), and **size reduction**.
 5. **Force the single-threaded fallback** once (serve without COOP/COEP, or any context lacking
    `SharedArrayBuffer`) and confirm it still completes — exercising the ADR-0006 fallback.
 
@@ -50,6 +50,6 @@ and ratify into the [performance budget](../quality/performance-budget.md), per 
 [roadmap Phase 0 bar](../product/roadmap.md#phase-0--riskiest-first-prototype-starting-2026-06).
 
 ## Scope
-Throwaway-grade UI; one fixed job (scale→720p, H.264 CRF 28). FS Access API save, OPFS scratch, quality
-presets/target-size, the offline PWA, and the command palette are Phase 1 — see
-[Scope](../product/scope.md).
+Throwaway-grade UI with basic **preset / CRF / height** knobs for measurement (defaults `veryfast`,
+CRF 28, 720p). Polished presets/target-size mode, FS Access API save, OPFS scratch, the offline PWA, and
+the command palette are Phase 1 — see [Scope](../product/scope.md).
