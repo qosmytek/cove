@@ -31,7 +31,7 @@ serves the production build the same way.
 
 ## Engines (ffmpeg.wasm vs WebCodecs)
 The shell has an **Engine** selector:
-- **ffmpeg.wasm** — the universal, proven path (any codec; software transcode — the timings above).
+- **ffmpeg.wasm** — the universal, proven path (any codec, but a slow software transcode).
 - **WebCodecs (hardware)** — the fast-path spike: demux → `VideoDecoder` → downscale → `VideoEncoder` →
   mux. **Video-only** (audio is dropped) and it targets a **bitrate** (the preset/CRF knobs don't apply).
 
