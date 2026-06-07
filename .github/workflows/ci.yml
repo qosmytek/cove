@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # npm may skip esbuild's postinstall; ensure its binary is present.
+      - run: node node_modules/esbuild/install.js
+      - run: npm run check # Biome lint + format
+      - run: npm run typecheck
+      - run: npm test # Vitest unit/integration
+      - run: npm run build
+      - run: npm run size # size-limit: shell within budget, no engine in entry
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e # Playwright: smoke + no-egress + axe
+      - run: npm run lhci # Lighthouse CI: shell performance budget
