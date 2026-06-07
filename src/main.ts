@@ -1,9 +1,9 @@
 // Phase 0 shell. Stays light: capability detection + UI wiring only. Both engines
 // (ffmpeg.wasm and the WebCodecs pipeline) are imported dynamically on intent.
 
-import { detectCapabilities, chooseCore, CORE_APPROX_MB } from './capabilities';
-import { reductionPct, heapMB, formatBytes, type CompressMetrics } from './measure';
-import { DEFAULT_OPTIONS, PRESETS, type CompressOptions } from './options';
+import { CORE_APPROX_MB, chooseCore, detectCapabilities } from './capabilities';
+import { type CompressMetrics, formatBytes, heapMB, reductionPct } from './measure';
+import { type CompressOptions, DEFAULT_OPTIONS, PRESETS } from './options';
 import { probeWebCodecs } from './webcodecs';
 
 const byId = <T extends HTMLElement>(id: string): T => {
@@ -73,7 +73,8 @@ fileInput.addEventListener('change', () => {
 compressBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
   const file = selectedFile;
-  const engine: 'ffmpeg.wasm' | 'webcodecs' = engineSel.value === 'webcodecs' ? 'webcodecs' : 'ffmpeg.wasm';
+  const engine: 'ffmpeg.wasm' | 'webcodecs' =
+    engineSel.value === 'webcodecs' ? 'webcodecs' : 'ffmpeg.wasm';
   const opts: CompressOptions = {
     preset: presetSel.value,
     crf: Number(crfInput.value),
@@ -92,7 +93,9 @@ compressBtn.addEventListener('click', async () => {
   compressBtn.disabled = true;
   cancelBtn.disabled = engine !== 'ffmpeg.wasm';
   progressEl.value = 0;
-  const onProgress = (r: number): void => { progressEl.value = Math.max(0, Math.min(1, r)); };
+  const onProgress = (r: number): void => {
+    progressEl.value = Math.max(0, Math.min(1, r));
+  };
 
   try {
     let output: Uint8Array<ArrayBuffer>;

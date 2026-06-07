@@ -21,8 +21,9 @@ const CORE_BASE: Record<CoreKind, string> = {
 
 export async function loadEngine(kind: CoreKind, handlers: LoadHandlers = {}): Promise<FFmpeg> {
   const ffmpeg = new FFmpeg();
-  if (handlers.onLog) ffmpeg.on('log', ({ message }) => handlers.onLog!(message));
-  if (handlers.onProgress) ffmpeg.on('progress', ({ progress }) => handlers.onProgress!(progress));
+  const { onLog, onProgress } = handlers;
+  if (onLog) ffmpeg.on('log', ({ message }) => onLog(message));
+  if (onProgress) ffmpeg.on('progress', ({ progress }) => onProgress(progress));
 
   const base = CORE_BASE[kind];
   const coreURL = await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript');
@@ -47,11 +48,22 @@ export async function compress(
   const output = 'output.mp4';
   await ffmpeg.writeFile(input, await fetchFile(file));
   await ffmpeg.exec([
-    '-i', input,
-    '-vf', `scale=-2:${opts.height}`,
-    '-c:v', 'libx264', '-preset', opts.preset, '-crf', String(opts.crf),
-    '-c:a', 'aac', '-b:a', '128k',
-    '-y', output,
+    '-i',
+    input,
+    '-vf',
+    `scale=-2:${opts.height}`,
+    '-c:v',
+    'libx264',
+    '-preset',
+    opts.preset,
+    '-crf',
+    String(opts.crf),
+    '-c:a',
+    'aac',
+    '-b:a',
+    '128k',
+    '-y',
+    output,
   ]);
   const data = await ffmpeg.readFile(output);
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;

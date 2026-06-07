@@ -8,13 +8,6 @@ export interface CompressOptions {
   height: number; // output height in px; width is derived to keep aspect ratio (-2)
 }
 
-export const PRESETS = [
-  'ultrafast',
-  'superfast',
-  'veryfast',
-  'faster',
-  'fast',
-  'medium',
-] as const;
+export const PRESETS = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium'] as const;
 
 export const DEFAULT_OPTIONS: CompressOptions = { preset: 'veryfast', crf: 28, height: 720 };

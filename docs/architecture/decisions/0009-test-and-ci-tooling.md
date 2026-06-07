@@ -9,6 +9,7 @@ accessibility, and core E2E flows — per [Testing Strategy](../../engineering/t
 approach open (deferred from Phase 0).
 
 ## Decision
+- **Lint & format:** **Biome** — one fast tool for both, near-zero config.
 - **Unit / integration:** **Vitest** (native to our Vite toolchain).
 - **E2E, a11y, no-egress:** **Playwright** (Chromium with COOP/COEP), **axe-core** via
   `@axe-core/playwright`, and a network-interception assertion that **no request carries user file bytes**.

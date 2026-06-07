@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Cove — Phase 0 video-compressor spike (ffmpeg.wasm on-device).",
+  "engines": {
+    "node": ">=20"
+  },
+  "description": "Cove — on-device video compressor (WebCodecs + ffmpeg.wasm fallback).",
   "scripts": {
     "copy-core": "node scripts/copy-ffmpeg-core.mjs",
     "predev": "npm run copy-core",
@@ -11,7 +14,14 @@
     "prebuild": "npm run copy-core",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "test": "vitest run",
+    "size": "size-limit",
+    "e2e": "playwright test",
+    "lhci": "lhci autorun"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.12.6",
@@ -22,7 +32,14 @@
     "mp4box": "^2.3.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@biomejs/biome": "^2.4.16",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.60.0",
+    "@size-limit/file": "^12.1.0",
+    "size-limit": "^12.1.0",
     "typescript": "^5.5.0",
-    "vite": "^5.4.0"
+    "vite": "^5.4.0",
+    "vitest": "^4.1.8"
   }
 }

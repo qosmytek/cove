@@ -1,0 +1,12 @@
+[
+  {
+    "name": "initial JS (entry chunk)",
+    "path": "dist/assets/index-*.js",
+    "limit": "150 kB"
+  },
+  {
+    "name": "initial transfer (html + entry JS + CSS)",
+    "path": ["dist/index.html", "dist/assets/index-*.js", "dist/assets/*.css"],
+    "limit": "250 kB"
+  }
+]

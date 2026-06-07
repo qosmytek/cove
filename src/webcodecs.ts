@@ -17,14 +17,23 @@ export interface ProbeResult {
 type Accel = 'no-preference' | 'prefer-hardware' | 'prefer-software';
 
 // H.264 Baseline L3.1 — represents the 720p output we'd encode.
-const ENCODE_CONFIG = { codec: 'avc1.42001f', width: 1280, height: 720, bitrate: 2_000_000, framerate: 30 };
+const ENCODE_CONFIG = {
+  codec: 'avc1.42001f',
+  width: 1280,
+  height: 720,
+  bitrate: 2_000_000,
+  framerate: 30,
+};
 // H.264 High L4.0 — represents the 1080p input we'd decode.
 const DECODE_CONFIG = { codec: 'avc1.640028', codedWidth: 1920, codedHeight: 1080 };
 
 async function encodeSupported(accel: Accel): Promise<boolean> {
   if (typeof VideoEncoder === 'undefined') return false;
   try {
-    const res = await VideoEncoder.isConfigSupported({ ...ENCODE_CONFIG, hardwareAcceleration: accel });
+    const res = await VideoEncoder.isConfigSupported({
+      ...ENCODE_CONFIG,
+      hardwareAcceleration: accel,
+    });
     return res.supported === true;
   } catch {
     return false;
@@ -34,7 +43,10 @@ async function encodeSupported(accel: Accel): Promise<boolean> {
 async function decodeSupported(accel: Accel): Promise<boolean> {
   if (typeof VideoDecoder === 'undefined') return false;
   try {
-    const res = await VideoDecoder.isConfigSupported({ ...DECODE_CONFIG, hardwareAcceleration: accel });
+    const res = await VideoDecoder.isConfigSupported({
+      ...DECODE_CONFIG,
+      hardwareAcceleration: accel,
+    });
     return res.supported === true;
   } catch {
     return false;
@@ -43,7 +55,9 @@ async function decodeSupported(accel: Accel): Promise<boolean> {
 
 export async function probeWebCodecs(): Promise<ProbeResult[]> {
   if (typeof VideoEncoder === 'undefined' || typeof VideoDecoder === 'undefined') {
-    return [{ label: 'WebCodecs API', supported: false, note: 'VideoEncoder/VideoDecoder not present' }];
+    return [
+      { label: 'WebCodecs API', supported: false, note: 'VideoEncoder/VideoDecoder not present' },
+    ];
   }
   // Request prefer-hardware (what the real pipeline would use); support here is the
   // precondition, hardware-vs-software speed is confirmed by the benchmark.

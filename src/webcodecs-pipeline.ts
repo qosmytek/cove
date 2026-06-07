@@ -3,9 +3,9 @@
 // Uses the device's hardware H.264 codecs. Video-only for the spike — audio is
 // dropped. Lazily imported from main.ts so mp4box/mp4-muxer stay out of the entry bundle.
 
+import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
+import type { MultiBufferStream, Sample, Track, VisualSampleEntry } from 'mp4box';
 import { createFile, DataStream, MP4BoxBuffer } from 'mp4box';
-import type { Sample, Track, VisualSampleEntry, MultiBufferStream } from 'mp4box';
-import { Muxer, ArrayBufferTarget } from 'mp4-muxer';
 import type { CompressOptions } from './options';
 
 export interface WCHandlers {
@@ -54,7 +54,11 @@ function demux(file: File): Promise<Demuxed> {
       if (samples.length >= track.nb_samples) {
         done = true;
         try {
-          resolve({ track, samples, description: extractDescription(samples[0].description as VisualSampleEntry) });
+          resolve({
+            track,
+            samples,
+            description: extractDescription(samples[0].description as VisualSampleEntry),
+          });
         } catch (e) {
           reject(e instanceof Error ? e : new Error(String(e)));
         }
@@ -84,7 +88,8 @@ export async function compressWebCodecs(
   const srcH = track.video?.height ?? track.track_height;
   const dstH = opts.height;
   const dstW = Math.max(2, Math.round((srcW * dstH) / srcH / 2) * 2); // even width, keep aspect
-  const fps = track.duration > 0 ? Math.round((track.nb_samples * track.timescale) / track.duration) : 30;
+  const fps =
+    track.duration > 0 ? Math.round((track.nb_samples * track.timescale) / track.duration) : 30;
   const total = samples.length;
   log(`${total} frames · ${srcW}×${srcH} → ${dstW}×${dstH} · ~${fps} fps · audio dropped`);
 
@@ -116,7 +121,10 @@ export async function compressWebCodecs(
   const decoder = new VideoDecoder({
     output: (frame) => {
       ctx.drawImage(frame, 0, 0, dstW, dstH);
-      const scaled = new VideoFrame(canvas, { timestamp: frame.timestamp, duration: frame.duration ?? undefined });
+      const scaled = new VideoFrame(canvas, {
+        timestamp: frame.timestamp,
+        duration: frame.duration ?? undefined,
+      });
       frame.close();
       encoder.encode(scaled);
       scaled.close();
