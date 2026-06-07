@@ -52,26 +52,29 @@ compressBtn.addEventListener('click', async () => {
   compressBtn.disabled = true;
   cancelBtn.disabled = false;
   progressEl.value = 0;
-  const t0 = performance.now();
 
   try {
     log(`Loading ${core === 'mt' ? 'multi-threaded' : 'single-threaded'} engine…`);
+    const loadStart = performance.now();
     const { loadEngine, compress } = await import('./engine');
     const ffmpeg = await loadEngine(core, {
       onLog: (m) => log(m),
       onProgress: (r) => { progressEl.value = Math.max(0, Math.min(1, r)); },
     });
+    const loadMs = Math.round(performance.now() - loadStart);
     running = ffmpeg;
-    log('Engine loaded. Compressing…');
+    log(`Engine loaded in ${(loadMs / 1000).toFixed(1)}s (one-time; cached after). Compressing…`);
 
+    const encodeStart = performance.now();
     const output = await compress(ffmpeg, file);
-    const elapsedMs = Math.round(performance.now() - t0);
+    const encodeMs = Math.round(performance.now() - encodeStart);
     const metrics: CompressMetrics = {
       core,
       inputBytes: file.size,
       outputBytes: output.byteLength,
       reductionPct: reductionPct(file.size, output.byteLength),
-      elapsedMs,
+      loadMs,
+      encodeMs,
       peakHeapMB: heapMB(),
     };
 
@@ -83,8 +86,9 @@ compressBtn.addEventListener('click', async () => {
     resultEl.replaceChildren(link);
 
     log(
-      `Done in ${(elapsedMs / 1000).toFixed(1)}s · ${formatBytes(metrics.inputBytes)} → ` +
-        `${formatBytes(metrics.outputBytes)} (${metrics.reductionPct}% smaller)` +
+      `Done · load ${(loadMs / 1000).toFixed(1)}s · encode ${(encodeMs / 1000).toFixed(1)}s · ` +
+        `${formatBytes(metrics.inputBytes)} → ${formatBytes(metrics.outputBytes)} ` +
+        `(${metrics.reductionPct}% smaller)` +
         (metrics.peakHeapMB ? ` · heap ~${metrics.peakHeapMB} MB` : ''),
     );
     console.table(metrics);

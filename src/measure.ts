@@ -8,7 +8,8 @@ export interface CompressMetrics {
   inputBytes: number;
   outputBytes: number;
   reductionPct: number;
-  elapsedMs: number;
+  loadMs: number;
+  encodeMs: number;
   peakHeapMB?: number;
 }
 
