@@ -14,7 +14,7 @@ Plain-language definitions of the terms and acronyms used across these docs.
 | **Cross-origin isolation** | A secure browser state required to use `SharedArrayBuffer` (and thus multi-threaded WASM). |
 | **CSP** | Content Security Policy — browser rules restricting what the page may load or connect to. |
 | **DuckDB-WASM** | An in-browser build of the DuckDB analytical database; runs SQL over local/remote data. |
-| **`ffmpeg.wasm`** | A WebAssembly build of FFmpeg; powers the video compressor. |
+| **`ffmpeg.wasm`** | A WebAssembly build of FFmpeg; the video compressor's universal **fallback** engine. |
 | **FS Access API** | File System Access API — lets the page read/write user-chosen files locally. |
 | **HTTP range request** | A request for only a byte range of a file, so big remote files aren't fully downloaded. |
 | **IndexedDB** | A browser database for structured client-side storage (we store ciphertext in it). |
@@ -31,6 +31,7 @@ Plain-language definitions of the terms and acronyms used across these docs.
 | **`transformers.js`** | A library for running ML models in the browser (CPU / WebGPU). |
 | **WASM** | WebAssembly — a fast, portable binary instruction format that runs in the browser. |
 | **Web Crypto** | The browser's native cryptography API. |
+| **WebCodecs** | Browser API exposing the device's hardware video codecs (`VideoEncoder`/`VideoDecoder`); the video compressor's fast path. |
 | **WebGPU** | A modern browser GPU API; enables fast on-device AI inference. |
 | **WebLLM** | A project for running large language models in the browser on WebGPU. |
 | **Web Worker** | A background thread for running code (e.g., WASM compute) off the main UI thread. |

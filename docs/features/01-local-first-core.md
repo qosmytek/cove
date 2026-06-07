@@ -13,8 +13,9 @@ nothing transmitted. Every tool is built on this capability.
 promise rests here.
 
 ## How we build it
-- **Compute in WebAssembly**, chosen per task:
-  - Media → `ffmpeg.wasm` (powers the v1 video compressor).
+- **Compute chosen per task:**
+  - Media → **WebCodecs** (hardware) for the v1 video compressor, with an `ffmpeg.wasm` **fallback**
+    ([ADR-0007](../architecture/decisions/0007-video-engine-webcodecs-with-ffmpeg-fallback.md)).
   - Data → `sql.js` / **DuckDB-WASM**.
   - Python libraries → **Pyodide**.
 - **Local file I/O** via the **File System Access API** for reading and saving, plus **OPFS** (Origin

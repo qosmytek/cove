@@ -8,14 +8,15 @@ brief: **one strong idea executed exceptionally well, not everything stacked at 
 
 ## MVP definition
 
-**v1 is a browser video compressor** (`ffmpeg.wasm`) that runs entirely on-device, installs as a PWA,
-and works offline. It is the iconic "SaaS killer" use case and the **riskiest technical piece** —
+**v1 is a browser video compressor** (WebCodecs hardware path with an `ffmpeg.wasm` fallback) that runs
+entirely on-device, installs as a PWA, and works offline. It is the iconic "SaaS killer" use case and the **riskiest technical piece** —
 proving it first de-risks the whole platform.
 
 ### In scope for v1
 - Drag-drop / file-picker input for common video formats.
 - Quality presets **and** approximate target-size compression.
-- `ffmpeg.wasm` compute in a Web Worker; responsive, cancelable UI with progress.
+- On-device compute off the main thread (WebCodecs fast path + `ffmpeg.wasm` fallback); responsive,
+  cancelable UI with progress.
 - Lazy, intent-gated engine load with size disclosure.
 - Save output via File System Access API (download fallback).
 - Installable, offline-first PWA shell.
@@ -40,7 +41,7 @@ proving it first de-risks the whole platform.
 
 ## The MoSCoW cut for v1
 
-- **Must:** FR-P1–P9 and FR-V1–V6 (see [PRD](./prd.md#5-functional-requirements)).
+- **Must:** FR-P1–P9, FR-V1–V6, and FR-V8–V9 (see [PRD](./prd.md#5-functional-requirements)).
 - **Should:** FR-P10 (command palette), FR-V7 (large-file resilience).
 - **Could:** batch compression, advanced codec options.
 - **Won't (v1):** everything under "Deferred" and "Out of scope" above.

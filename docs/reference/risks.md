@@ -17,11 +17,12 @@ Likelihood × Impact (each Low / Med / High). Owner: Victor Senna Seleimend; rev
   fallback; enforce the [performance budget](../quality/performance-budget.md) in
   [CI](../engineering/ci-cd.md).
 
-### R2 — `ffmpeg.wasm` too slow / memory-hungry on mid-range phones 🔴
-- **Impact:** High — could invalidate the flagship.
-- **Mitigation:** the **Phase 0 prototype proves this first** on a real device
-  ([Roadmap](../product/roadmap.md)); tune threading/build; OPFS scratch; honest large-file limits. If
-  it fails, re-pick the flagship ([Scope](../product/scope.md)).
+### R2 — Software `ffmpeg.wasm` too slow / memory-hungry on mid-range phones 🟠 *(mitigated in Phase 0)*
+- **Impact:** High — would invalidate the flagship if it were the only engine.
+- **Mitigation:** **Resolved in Phase 0** — software `ffmpeg.wasm` is too slow for 1080p on mid-range
+  (~4× real-time), so the flagship uses the **WebCodecs hardware fast path** (~real-time) with
+  `ffmpeg.wasm` only as a **fallback** ([ADR-0007](../architecture/decisions/0007-video-engine-webcodecs-with-ffmpeg-fallback.md)).
+  Residual: keep the fallback's large-file/memory behavior honest (OPFS scratch, clear limits).
 
 ### R3 — Capability fragmentation (FS Access, WebGPU, SharedArrayBuffer) 🟠
 - **Impact:** Med/High — features unavailable or degraded on some browsers.

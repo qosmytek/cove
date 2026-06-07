@@ -38,8 +38,10 @@ Nothing is transmitted. The app installs as a **PWA** and works **offline**.
 
 ## Flagship (v1)
 
-A **browser video compressor** on `ffmpeg.wasm` — the iconic use case and the riskiest technical
-piece, so it de-risks everything else. See [Scope & MVP](./scope.md).
+A **browser video compressor** — the iconic use case and the riskiest technical piece, so it de-risks
+everything else. It uses the **WebCodecs** hardware path with an `ffmpeg.wasm` fallback
+([ADR-0007](../architecture/decisions/0007-video-engine-webcodecs-with-ffmpeg-fallback.md)). See
+[Scope & MVP](./scope.md).
 
 ## Who it's for
 

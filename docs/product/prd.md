@@ -76,17 +76,27 @@ See [Personas](./personas.md). v1 optimizes for **Priya** (privacy-conscious pro
   [Command Palette](../features/08-command-palette.md).
 
 ### 5.2 Flagship — video compressor
-- **FR-V1** Accept common inputs (at least MP4/H.264, WebM/VP9, MOV) via drag-drop or picker.
+- **FR-V1** Accept common inputs (at least MP4/H.264, WebM/VP9, MOV) via drag-drop or picker — H.264
+  via the WebCodecs fast path, other codecs/containers via the `ffmpeg.wasm` fallback.
 - **FR-V2** Offer at least quality presets (e.g., High / Balanced / Small) **and** an approximate
   target-size mode.
-- **FR-V3** Compress with `ffmpeg.wasm` in a worker; show progress (determinate where possible).
+- **FR-V3** Compress **on-device, off the main thread**, via the **WebCodecs** hardware path with an
+  **`ffmpeg.wasm` fallback** (capability-detected;
+  [ADR-0007](../architecture/decisions/0007-video-engine-webcodecs-with-ffmpeg-fallback.md)); show
+  progress (determinate where possible).
 - **FR-V4** Keep the UI responsive and the job **cancelable** during compression.
 - **FR-V5** Report output size and reduction vs. original; save to disk via FS Access API (fallback:
   download).
-- **FR-V6** Lazy-load the `ffmpeg.wasm` core only when the user starts a compression, after disclosing
-  its size.
-- **FR-V7** Handle large files without exhausting memory (stream / scratch via OPFS where feasible) and
-  fail gracefully with a clear message when the device can't.
+- **FR-V6** Load the compute engine only when the user starts a compression. The `ffmpeg.wasm` fallback
+  is a large download, so disclose its size first; the WebCodecs path uses built-in OS codecs (no large
+  download).
+- **FR-V7** Handle large files without exhausting memory (OPFS scratch for the `ffmpeg.wasm` path;
+  chunked/streamed decode→encode for the WebCodecs path) and fail gracefully with a clear message when
+  the device can't.
+- **FR-V8** Select the engine by **capability detection** — prefer the WebCodecs hardware path; fall
+  back to `ffmpeg.wasm` when WebCodecs or the codec is unavailable, and retry single-threaded if a
+  multi-threaded `ffmpeg.wasm` run crashes.
+- **FR-V9** **Preserve the audio track** in the output — the engine must mux audio, not drop it.
 
 ## 6. Non-functional requirements
 
@@ -101,8 +111,8 @@ nice-to-haves.
 - [ ] On the defined mid-range phone, a representative clip compresses successfully **offline** after
       first load.
 - [ ] No user file bytes appear in network traffic during any operation (verified manually + in CI).
-- [ ] Initial shell payload is within the [performance budget](../quality/performance-budget.md);
-      `ffmpeg.wasm` loads only on intent, size disclosed.
+- [ ] Initial shell payload is within the [performance budget](../quality/performance-budget.md); the
+      compute engine loads only on intent (the `ffmpeg.wasm` fallback discloses its size first).
 - [ ] App installs as a PWA and launches/works with no network.
 - [ ] All flows are fully keyboard-operable; axe-core reports zero critical issues.
 - [ ] When a required capability is missing, the user sees a clear explanation and any fallback.
@@ -110,8 +120,10 @@ nice-to-haves.
 ## 8. Dependencies & assumptions
 
 - Browser support for the chosen APIs on target devices (see [Tech Stack](../architecture/tech-stack.md)).
-- `ffmpeg.wasm` performance is acceptable on the mid-range target — **must be validated in the
-  [riskiest-first prototype](./roadmap.md#phase-0--riskiest-first-prototype-starting-2026-06)**.
+- On-device compression is fast enough on the mid-range target — **validated in the
+  [Phase 0 prototype](./roadmap.md#phase-0--riskiest-first-prototype-starting-2026-06)**: WebCodecs
+  (hardware) is the fast path, `ffmpeg.wasm` the fallback
+  ([ADR-0007](../architecture/decisions/0007-video-engine-webcodecs-with-ffmpeg-fallback.md)).
 - Cross-origin isolation (COOP/COEP) is available for `SharedArrayBuffer` where needed — see
   [ADR-0002](../architecture/decisions/0002-web-workers-for-compute.md).
 
