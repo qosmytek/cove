@@ -25,6 +25,7 @@
     <div id="webcodecs"></div>
     <p>Pick a video; it is compressed entirely on your device with <code>ffmpeg.wasm</code>. Nothing is uploaded.</p>
     <div class="row">
+      <label for="file">Video file</label>
       <input id="file" type="file" accept="video/*" />
     </div>
     <div class="row">
@@ -48,7 +49,7 @@
       <button id="compress" type="button" disabled>Compress</button>
       <button id="cancel" type="button" disabled>Cancel</button>
     </div>
-    <progress id="progress" max="1" value="0"></progress>
+    <progress id="progress" max="1" value="0" aria-label="Compression progress"></progress>
     <div id="result"></div>
     <pre id="log"></pre>
     <script type="module" src="/src/main.ts"></script>
