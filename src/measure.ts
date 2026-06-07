@@ -1,19 +1,14 @@
-// Lightweight measurement helpers for the Phase 0 go/no-go. See
-// docs/engineering/phase-0-measurement.md.
-
-import type { CoreKind } from './capabilities';
+// Lightweight measurement helpers for the compressor (size reduction, timing, heap).
 
 export interface CompressMetrics {
   engine: 'ffmpeg.wasm' | 'webcodecs';
-  core?: CoreKind;
   preset: string;
   crf: number;
   height: number;
   inputBytes: number;
   outputBytes: number;
   reductionPct: number;
-  loadMs: number;
-  encodeMs: number;
+  elapsedMs: number;
   peakHeapMB?: number;
 }
 

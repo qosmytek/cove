@@ -1,7 +1,8 @@
-// Phase 0 shell. Stays light: capability detection + UI wiring only. Both engines
-// (ffmpeg.wasm and the WebCodecs pipeline) are imported dynamically on intent.
+// Shell: capability detection + UI wiring. Compression is delegated to the engine
+// orchestrator (compressor.ts), which auto-selects WebCodecs or ffmpeg.wasm.
 
 import { CORE_APPROX_MB, chooseCore, detectCapabilities } from './capabilities';
+import { compress, type EngineChoice } from './compressor';
 import { type CompressMetrics, formatBytes, heapMB, reductionPct } from './measure';
 import { type CompressOptions, DEFAULT_OPTIONS, PRESETS } from './options';
 import { probeWebCodecs } from './webcodecs';
@@ -26,10 +27,9 @@ const heightSel = byId<HTMLSelectElement>('height');
 const webcodecsEl = byId<HTMLDivElement>('webcodecs');
 
 const caps = detectCapabilities();
-const core = chooseCore(caps);
 statusEl.textContent =
   `crossOriginIsolated: ${caps.crossOriginIsolated} · SharedArrayBuffer: ${caps.sharedArrayBuffer} · ` +
-  `ffmpeg core: ${core === 'mt' ? 'multi-threaded' : 'single-threaded (fallback)'}`;
+  `ffmpeg fallback core: ${chooseCore(caps) === 'mt' ? 'multi-threaded' : 'single-threaded'}`;
 
 // Seed the controls from the defaults (single source of truth in options.ts).
 for (const p of PRESETS) {
@@ -42,7 +42,6 @@ presetSel.value = DEFAULT_OPTIONS.preset;
 crfInput.value = String(DEFAULT_OPTIONS.crf);
 heightSel.value = String(DEFAULT_OPTIONS.height);
 
-// Phase 0: probe the WebCodecs (hardware) path we're evaluating as the fast lane.
 void probeWebCodecs().then((results) => {
   webcodecsEl.replaceChildren();
   const heading = document.createElement('strong');
@@ -57,7 +56,7 @@ void probeWebCodecs().then((results) => {
 });
 
 let selectedFile: File | null = null;
-let running: { terminate: () => void } | null = null; // only ffmpeg.wasm is cancelable in this spike
+let controller: AbortController | null = null;
 
 function log(line: string): void {
   logEl.textContent += `${line}\n`;
@@ -73,77 +72,56 @@ fileInput.addEventListener('change', () => {
 compressBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
   const file = selectedFile;
-  const engine: 'ffmpeg.wasm' | 'webcodecs' =
-    engineSel.value === 'webcodecs' ? 'webcodecs' : 'ffmpeg.wasm';
-  const opts: CompressOptions = {
+  const choice = engineSel.value as EngineChoice;
+  const options: CompressOptions = {
     preset: presetSel.value,
     crf: Number(crfInput.value),
     height: Number(heightSel.value),
   };
 
-  // Only ffmpeg.wasm pulls a large engine; disclose its size first.
-  if (engine === 'ffmpeg.wasm') {
-    const proceed = confirm(
-      `This downloads the ~${CORE_APPROX_MB[core]} MB compression engine once (then cached) and runs ` +
-        `entirely on your device — nothing is uploaded. Continue?`,
-    );
-    if (!proceed) return;
-  }
-
+  controller = new AbortController();
   compressBtn.disabled = true;
-  cancelBtn.disabled = engine !== 'ffmpeg.wasm';
+  cancelBtn.disabled = false;
   progressEl.value = 0;
-  const onProgress = (r: number): void => {
-    progressEl.value = Math.max(0, Math.min(1, r));
-  };
+  const t0 = performance.now();
+  log(
+    `Compressing (engine: ${choice}) · preset=${options.preset} · crf=${options.crf} · ` +
+      `height=${options.height}p…`,
+  );
 
   try {
-    let output: Uint8Array<ArrayBuffer>;
-    let loadMs: number;
-    let encodeMs: number;
-    const loadStart = performance.now();
+    const { data, engine } = await compress(
+      file,
+      options,
+      {
+        onLog: log,
+        onProgress: (r) => {
+          progressEl.value = Math.max(0, Math.min(1, r));
+        },
+        signal: controller.signal,
+        confirmFfmpegDownload: () =>
+          confirm(
+            `This downloads the ~${CORE_APPROX_MB[chooseCore()]} MB ffmpeg engine once (then cached) ` +
+              'and runs entirely on your device — nothing is uploaded. Continue?',
+          ),
+      },
+      choice,
+    );
 
-    if (engine === 'ffmpeg.wasm') {
-      log(`Loading ${core === 'mt' ? 'multi-threaded' : 'single-threaded'} ffmpeg engine…`);
-      const { loadEngine, compress } = await import('./engine');
-      const ffmpeg = await loadEngine(core, { onLog: log, onProgress });
-      running = ffmpeg;
-      loadMs = Math.round(performance.now() - loadStart);
-      log(
-        `Engine loaded in ${(loadMs / 1000).toFixed(1)}s (one-time; cached after). ` +
-          `Settings: preset=${opts.preset} · crf=${opts.crf} · height=${opts.height}p`,
-      );
-      const encodeStart = performance.now();
-      output = await compress(ffmpeg, file, opts);
-      encodeMs = Math.round(performance.now() - encodeStart);
-    } else {
-      log('Loading WebCodecs pipeline…');
-      const { compressWebCodecs } = await import('./webcodecs-pipeline');
-      loadMs = Math.round(performance.now() - loadStart);
-      log(
-        `Pipeline loaded in ${(loadMs / 1000).toFixed(1)}s. Transcoding via WebCodecs (hardware path) · ` +
-          `height=${opts.height}p · preset/CRF don't apply.`,
-      );
-      const encodeStart = performance.now();
-      output = await compressWebCodecs(file, opts, { onLog: log, onProgress });
-      encodeMs = Math.round(performance.now() - encodeStart);
-    }
-
+    const elapsedMs = Math.round(performance.now() - t0);
     const metrics: CompressMetrics = {
       engine,
-      core: engine === 'ffmpeg.wasm' ? core : undefined,
-      preset: opts.preset,
-      crf: opts.crf,
-      height: opts.height,
+      preset: options.preset,
+      crf: options.crf,
+      height: options.height,
       inputBytes: file.size,
-      outputBytes: output.byteLength,
-      reductionPct: reductionPct(file.size, output.byteLength),
-      loadMs,
-      encodeMs,
+      outputBytes: data.byteLength,
+      reductionPct: reductionPct(file.size, data.byteLength),
+      elapsedMs,
       peakHeapMB: heapMB(),
     };
 
-    const url = URL.createObjectURL(new Blob([output], { type: 'video/mp4' }));
+    const url = URL.createObjectURL(new Blob([data], { type: 'video/mp4' }));
     const link = document.createElement('a');
     link.href = url;
     link.download = `compressed-${file.name.replace(/\.[^.]+$/, '')}.mp4`;
@@ -151,28 +129,24 @@ compressBtn.addEventListener('click', async () => {
     resultEl.replaceChildren(link);
 
     log(
-      `Done [${engine}] · load ${(loadMs / 1000).toFixed(1)}s · encode ${(encodeMs / 1000).toFixed(1)}s · ` +
-        `${formatBytes(metrics.inputBytes)} → ${formatBytes(metrics.outputBytes)} ` +
-        `(${metrics.reductionPct}% smaller)` +
+      `Done [${engine}] · ${(elapsedMs / 1000).toFixed(1)}s · ${formatBytes(metrics.inputBytes)} → ` +
+        `${formatBytes(metrics.outputBytes)} (${metrics.reductionPct}% smaller)` +
         (metrics.peakHeapMB ? ` · heap ~${metrics.peakHeapMB} MB` : ''),
     );
     console.table(metrics);
   } catch (err) {
-    log(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    if (controller.signal.aborted) log('Cancelled.');
+    else log(`Error: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     progressEl.value = 0;
     compressBtn.disabled = false;
     cancelBtn.disabled = true;
-    running = null;
+    controller = null;
   }
 });
 
 cancelBtn.addEventListener('click', () => {
-  if (!running) return;
-  running.terminate();
-  running = null;
-  log('Cancelled.');
-  compressBtn.disabled = false;
+  controller?.abort();
   cancelBtn.disabled = true;
-  progressEl.value = 0;
+  log('Cancelling…');
 });
