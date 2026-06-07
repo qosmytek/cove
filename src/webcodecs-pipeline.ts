@@ -11,6 +11,7 @@ import type { CompressOptions } from './options';
 export interface WCHandlers {
   onLog?: (line: string) => void;
   onProgress?: (ratio: number) => void;
+  signal?: AbortSignal;
 }
 
 interface Demuxed {
@@ -81,6 +82,8 @@ export async function compressWebCodecs(
   handlers: WCHandlers = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const log = (m: string): void => handlers.onLog?.(m);
+  const { signal } = handlers;
+  if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
   log('Demuxing…');
   const { track, samples, description } = await demux(file);
@@ -141,6 +144,12 @@ export async function compressWebCodecs(
     hardwareAcceleration: 'prefer-hardware',
   });
 
+  const onAbort = (): void => {
+    if (decoder.state !== 'closed') decoder.close();
+    if (encoder.state !== 'closed') encoder.close();
+  };
+  signal?.addEventListener('abort', onAbort, { once: true });
+
   for (const s of samples) {
     if (!s.data) continue;
     decoder.decode(
@@ -158,6 +167,7 @@ export async function compressWebCodecs(
   muxer.finalize();
   decoder.close();
   encoder.close();
+  signal?.removeEventListener('abort', onAbort);
 
   return new Uint8Array(muxer.target.buffer);
 }

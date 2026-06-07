@@ -73,3 +73,23 @@ export async function compress(
   result.set(bytes);
   return result;
 }
+
+export interface FfmpegRunHandlers {
+  onLog?: (line: string) => void;
+  onProgress?: (ratio: number) => void;
+  signal?: AbortSignal;
+  core: CoreKind;
+}
+
+/** Load the chosen ffmpeg core and run one compression; terminates the worker on abort. */
+export async function runFfmpeg(
+  file: File,
+  opts: CompressOptions,
+  handlers: FfmpegRunHandlers,
+): Promise<Uint8Array<ArrayBuffer>> {
+  const { onLog, onProgress, signal, core } = handlers;
+  if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
+  const ffmpeg = await loadEngine(core, { onLog, onProgress });
+  signal?.addEventListener('abort', () => ffmpeg.terminate(), { once: true });
+  return compress(ffmpeg, file, opts);
+}
