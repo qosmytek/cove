@@ -37,8 +37,9 @@ automatically on every change.
 - No third-party runtime scripts ([Calm by Design](../features/07-calm-design.md)).
 
 ## Open questions
-- CI provider and automated real-device testing (cloud device farm vs. self-hosted) — chosen in
-  Phase 1; Phase 0 measures manually on a physical device.
+- Real-device **automation** (cloud device farm vs. self-hosted) stays deferred — Phase 1 uses the
+  throttled proxy in CI plus manual physical-A54 checks; provider + tooling are decided
+  ([ADR-0009](../architecture/decisions/0009-test-and-ci-tooling.md): GitHub Actions).
 - Release cadence and versioning scheme.
 
 See also: [Testing Strategy](./testing-strategy.md) · [Performance Budget](../quality/performance-budget.md)

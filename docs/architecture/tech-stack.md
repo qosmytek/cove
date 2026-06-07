@@ -53,6 +53,7 @@ or accessibility.
 - Any backend application server or user database — see
   [ADR-0005](./decisions/0005-no-server-no-account.md).
 
-## Open decisions (future ADRs)
-- UI framework (or none).
-- Test runner + E2E tooling — see [Testing Strategy](../engineering/testing-strategy.md).
+## Decided (see ADRs)
+- **UI framework:** none — vanilla TypeScript + native DOM ([ADR-0008](./decisions/0008-no-ui-framework.md)).
+- **Test & CI tooling:** Vitest + Playwright + Lighthouse CI on GitHub Actions
+  ([ADR-0009](./decisions/0009-test-and-ci-tooling.md)); see [Testing Strategy](../engineering/testing-strategy.md).

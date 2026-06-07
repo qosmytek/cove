@@ -46,7 +46,8 @@ it on a real *mid-range phone*, not a laptop.
 Use small, license-clear media/data fixtures; **never commit real user content.**
 
 ## Open questions
-- E2E runner (e.g., Playwright) and automated real-device runs — deferred past Phase 0, which measures
-  manually on a physical Samsung Galaxy A54 5G.
+- The E2E runner is **Playwright** ([ADR-0009](../architecture/decisions/0009-test-and-ci-tooling.md));
+  automated real-device runs (device farm) stay deferred — the throttled proxy runs in CI, with manual
+  physical-A54 checks.
 
 See also: [CI/CD](./ci-cd.md) · [Performance Budget](../quality/performance-budget.md)

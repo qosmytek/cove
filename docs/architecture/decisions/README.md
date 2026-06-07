@@ -19,9 +19,10 @@ Each ADR follows **Context → Decision → Consequences**, with a status line. 
 | [0005](./0005-no-server-no-account.md) | No server-side processing, no accounts | Accepted |
 | [0006](./0006-ffmpeg-build-and-threading.md) | `ffmpeg.wasm` build + threading (multi-threaded core, single-threaded fallback) | Accepted |
 | [0007](./0007-video-engine-webcodecs-with-ffmpeg-fallback.md) | Video engine: WebCodecs fast path + `ffmpeg.wasm` fallback | Accepted |
+| [0008](./0008-no-ui-framework.md) | No UI framework for v1 (vanilla TS + native DOM) | Accepted |
+| [0009](./0009-test-and-ci-tooling.md) | Test & CI tooling (Vitest, Playwright, Lighthouse CI, GitHub Actions) | Accepted |
 
 ## Proposed / future
-- UI framework (or none)
-- Test / E2E tooling
+- _None open — the UI-framework and test/CI-tooling questions are now decided (ADR-0008, ADR-0009)._
 
 New ADRs copy the structure of [ADR-0001](./0001-wasm-compute-engines.md).
