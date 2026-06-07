@@ -37,6 +37,14 @@ into the [performance budget](../quality/performance-budget.md)):
   **first on-device run sets the time and peak-memory thresholds**, which are then ratified into the
   performance budget.
 
+**Outcome (2026-06-07): PASS.** On the reference-device proxy (6× CPU throttle, ~50 s 1080p H.264),
+`ffmpeg.wasm` encoded in ≈ 200 s (software, decode-bound) while **WebCodecs encoded in ≈ 22 s**
+(hardware, ~0.4× real-time and throttle-insensitive). Both produced a correct, smaller file with zero
+egress, and the single-threaded fallback worked. **Decision:** WebCodecs fast path + `ffmpeg.wasm`
+fallback — see [ADR-0007](../architecture/decisions/0007-video-engine-webcodecs-with-ffmpeg-fallback.md).
+Remaining due diligence: a confirming run on the **physical** A54 (hardware codecs already confirmed
+available there).
+
 > **If Phase 0 fails**, we re-pick the flagship *before* building UI — see [Scope](./scope.md).
 
 ## Phase 1 — Flagship MVP: video compressor
