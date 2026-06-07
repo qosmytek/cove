@@ -58,6 +58,6 @@ and ratify into the [performance budget](../quality/performance-budget.md), per 
 [roadmap Phase 0 bar](../product/roadmap.md#phase-0--riskiest-first-prototype-starting-2026-06).
 
 ## Scope
-Throwaway-grade UI with basic **preset / CRF / height** knobs for measurement (defaults `veryfast`,
+Throwaway-grade UI with basic **preset / CRF / height** knobs for measurement (defaults `faster`,
 CRF 28, 720p). Polished presets/target-size mode, FS Access API save, OPFS scratch, the offline PWA, and
 the command palette are Phase 1 — see [Scope](../product/scope.md).

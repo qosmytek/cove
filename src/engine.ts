@@ -81,7 +81,14 @@ export interface FfmpegRunHandlers {
   core: CoreKind;
 }
 
-/** Load the chosen ffmpeg core and run one compression; terminates the worker on abort. */
+/** No-progress window after which a (deadlocked) multi-threaded run is treated as hung. */
+const STALL_MS = 30_000;
+
+/**
+ * Load the chosen ffmpeg core and run one compression. Terminates the worker on abort,
+ * or if it stalls (no progress for STALL_MS) — so a deadlocked multi-threaded run rejects
+ * and the orchestrator can retry single-threaded.
+ */
 export async function runFfmpeg(
   file: File,
   opts: CompressOptions,
@@ -89,7 +96,38 @@ export async function runFfmpeg(
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { onLog, onProgress, signal, core } = handlers;
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
-  const ffmpeg = await loadEngine(core, { onLog, onProgress });
-  signal?.addEventListener('abort', () => ffmpeg.terminate(), { once: true });
-  return compress(ffmpeg, file, opts);
+
+  let watchdog: ReturnType<typeof setTimeout> | undefined;
+  let hung = false;
+  let terminate: (() => void) | undefined;
+  const kick = (): void => {
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => {
+      hung = true;
+      terminate?.();
+    }, STALL_MS);
+  };
+
+  const ffmpeg = await loadEngine(core, {
+    onLog: (m) => {
+      kick();
+      onLog?.(m);
+    },
+    onProgress: (r) => {
+      kick();
+      onProgress?.(r);
+    },
+  });
+  terminate = () => ffmpeg.terminate();
+  signal?.addEventListener('abort', terminate, { once: true });
+
+  kick(); // arm even if no progress event ever fires
+  try {
+    return await compress(ffmpeg, file, opts);
+  } catch (err) {
+    if (hung) throw new Error(`ffmpeg ${core} core stalled (no progress for ${STALL_MS / 1000}s)`);
+    throw err;
+  } finally {
+    clearTimeout(watchdog);
+  }
 }

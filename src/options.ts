@@ -10,4 +10,7 @@ export interface CompressOptions {
 
 export const PRESETS = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium'] as const;
 
-export const DEFAULT_OPTIONS: CompressOptions = { preset: 'veryfast', crf: 28, height: 720 };
+// Default preset is 'faster' (not 'veryfast'): the faster presets can deadlock the
+// multi-threaded ffmpeg core, and 'faster' is multi-thread-safe. See engine.ts's stall
+// watchdog, which recovers if a chosen preset hangs anyway.
+export const DEFAULT_OPTIONS: CompressOptions = { preset: 'faster', crf: 28, height: 720 };
