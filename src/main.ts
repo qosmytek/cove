@@ -1,5 +1,5 @@
-// Phase 0 shell. Stays light: capability detection + UI wiring only. The ffmpeg
-// engine is imported dynamically on intent (see engine.ts).
+// Phase 0 shell. Stays light: capability detection + UI wiring only. Both engines
+// (ffmpeg.wasm and the WebCodecs pipeline) are imported dynamically on intent.
 
 import { detectCapabilities, chooseCore, CORE_APPROX_MB } from './capabilities';
 import { reductionPct, heapMB, formatBytes, type CompressMetrics } from './measure';
@@ -19,6 +19,7 @@ const cancelBtn = byId<HTMLButtonElement>('cancel');
 const progressEl = byId<HTMLProgressElement>('progress');
 const logEl = byId<HTMLPreElement>('log');
 const resultEl = byId<HTMLDivElement>('result');
+const engineSel = byId<HTMLSelectElement>('engine');
 const presetSel = byId<HTMLSelectElement>('preset');
 const crfInput = byId<HTMLInputElement>('crf');
 const heightSel = byId<HTMLSelectElement>('height');
@@ -28,7 +29,7 @@ const caps = detectCapabilities();
 const core = chooseCore(caps);
 statusEl.textContent =
   `crossOriginIsolated: ${caps.crossOriginIsolated} · SharedArrayBuffer: ${caps.sharedArrayBuffer} · ` +
-  `engine: ${core === 'mt' ? 'multi-threaded' : 'single-threaded (fallback)'}`;
+  `ffmpeg core: ${core === 'mt' ? 'multi-threaded' : 'single-threaded (fallback)'}`;
 
 // Seed the controls from the defaults (single source of truth in options.ts).
 for (const p of PRESETS) {
@@ -56,7 +57,7 @@ void probeWebCodecs().then((results) => {
 });
 
 let selectedFile: File | null = null;
-let running: { terminate: () => void } | null = null;
+let running: { terminate: () => void } | null = null; // only ffmpeg.wasm is cancelable in this spike
 
 function log(line: string): void {
   logEl.textContent += `${line}\n`;
@@ -72,41 +73,62 @@ fileInput.addEventListener('change', () => {
 compressBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
   const file = selectedFile;
+  const engine: 'ffmpeg.wasm' | 'webcodecs' = engineSel.value === 'webcodecs' ? 'webcodecs' : 'ffmpeg.wasm';
+  const opts: CompressOptions = {
+    preset: presetSel.value,
+    crf: Number(crfInput.value),
+    height: Number(heightSel.value),
+  };
 
-  // Disclose the one-time engine size BEFORE loading any engine code.
-  const proceed = confirm(
-    `This downloads the ~${CORE_APPROX_MB[core]} MB compression engine once (then cached) and runs ` +
-      `entirely on your device — nothing is uploaded. Continue?`,
-  );
-  if (!proceed) return;
+  // Only ffmpeg.wasm pulls a large engine; disclose its size first.
+  if (engine === 'ffmpeg.wasm') {
+    const proceed = confirm(
+      `This downloads the ~${CORE_APPROX_MB[core]} MB compression engine once (then cached) and runs ` +
+        `entirely on your device — nothing is uploaded. Continue?`,
+    );
+    if (!proceed) return;
+  }
 
   compressBtn.disabled = true;
-  cancelBtn.disabled = false;
+  cancelBtn.disabled = engine !== 'ffmpeg.wasm';
   progressEl.value = 0;
+  const onProgress = (r: number): void => { progressEl.value = Math.max(0, Math.min(1, r)); };
 
   try {
-    log(`Loading ${core === 'mt' ? 'multi-threaded' : 'single-threaded'} engine…`);
+    let output: Uint8Array<ArrayBuffer>;
+    let loadMs: number;
+    let encodeMs: number;
     const loadStart = performance.now();
-    const { loadEngine, compress } = await import('./engine');
-    const ffmpeg = await loadEngine(core, {
-      onLog: (m) => log(m),
-      onProgress: (r) => { progressEl.value = Math.max(0, Math.min(1, r)); },
-    });
-    const loadMs = Math.round(performance.now() - loadStart);
-    running = ffmpeg;
-    log(`Engine loaded in ${(loadMs / 1000).toFixed(1)}s (one-time; cached after). Compressing…`);
 
-    const opts: CompressOptions = {
-      preset: presetSel.value,
-      crf: Number(crfInput.value),
-      height: Number(heightSel.value),
-    };
-    log(`Settings: preset=${opts.preset} · crf=${opts.crf} · height=${opts.height}p`);
-    const encodeStart = performance.now();
-    const output = await compress(ffmpeg, file, opts);
-    const encodeMs = Math.round(performance.now() - encodeStart);
+    if (engine === 'ffmpeg.wasm') {
+      log(`Loading ${core === 'mt' ? 'multi-threaded' : 'single-threaded'} ffmpeg engine…`);
+      const { loadEngine, compress } = await import('./engine');
+      const ffmpeg = await loadEngine(core, { onLog: log, onProgress });
+      running = ffmpeg;
+      loadMs = Math.round(performance.now() - loadStart);
+      log(
+        `Engine loaded in ${(loadMs / 1000).toFixed(1)}s (one-time; cached after). ` +
+          `Settings: preset=${opts.preset} · crf=${opts.crf} · height=${opts.height}p`,
+      );
+      const encodeStart = performance.now();
+      output = await compress(ffmpeg, file, opts);
+      encodeMs = Math.round(performance.now() - encodeStart);
+    } else {
+      log('Loading WebCodecs pipeline…');
+      const { compressWebCodecs } = await import('./webcodecs-pipeline');
+      loadMs = Math.round(performance.now() - loadStart);
+      log(
+        `Pipeline loaded in ${(loadMs / 1000).toFixed(1)}s. Transcoding via WebCodecs (hardware path) · ` +
+          `height=${opts.height}p · preset/CRF don't apply.`,
+      );
+      const encodeStart = performance.now();
+      output = await compressWebCodecs(file, opts, { onLog: log, onProgress });
+      encodeMs = Math.round(performance.now() - encodeStart);
+    }
+
     const metrics: CompressMetrics = {
-      core,
+      engine,
+      core: engine === 'ffmpeg.wasm' ? core : undefined,
       preset: opts.preset,
       crf: opts.crf,
       height: opts.height,
@@ -126,7 +148,7 @@ compressBtn.addEventListener('click', async () => {
     resultEl.replaceChildren(link);
 
     log(
-      `Done · load ${(loadMs / 1000).toFixed(1)}s · encode ${(encodeMs / 1000).toFixed(1)}s · ` +
+      `Done [${engine}] · load ${(loadMs / 1000).toFixed(1)}s · encode ${(encodeMs / 1000).toFixed(1)}s · ` +
         `${formatBytes(metrics.inputBytes)} → ${formatBytes(metrics.outputBytes)} ` +
         `(${metrics.reductionPct}% smaller)` +
         (metrics.peakHeapMB ? ` · heap ~${metrics.peakHeapMB} MB` : ''),

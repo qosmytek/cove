@@ -29,6 +29,14 @@ serves the production build the same way.
 - **No request carries the input file's bytes** — only same-origin asset/core fetches.
 - A smaller `.mp4` is produced and downloadable.
 
+## Engines (ffmpeg.wasm vs WebCodecs)
+The shell has an **Engine** selector:
+- **ffmpeg.wasm** — the universal, proven path (any codec; software transcode — the timings above).
+- **WebCodecs (hardware)** — the fast-path spike: demux → `VideoDecoder` → downscale → `VideoEncoder` →
+  mux. **Video-only** (audio is dropped) and it targets a **bitrate** (the preset/CRF knobs don't apply).
+
+Benchmark by running the **same clip** through each engine and comparing the **encode** time.
+
 ## Measure on the reference device (the real go/no-go)
 Target: **Samsung Galaxy A54 5G**, a representative **~60 s 1080p H.264** clip.
 

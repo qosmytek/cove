@@ -28,6 +28,12 @@
       <input id="file" type="file" accept="video/*" />
     </div>
     <div class="row">
+      <label>Engine
+        <select id="engine">
+          <option value="ffmpeg.wasm">ffmpeg.wasm</option>
+          <option value="webcodecs">WebCodecs (hardware)</option>
+        </select>
+      </label>
       <label>Preset <select id="preset"></select></label>
       <label>CRF <input id="crf" type="number" min="0" max="51" step="1" /></label>
       <label>Height

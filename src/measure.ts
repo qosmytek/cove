@@ -4,7 +4,8 @@
 import type { CoreKind } from './capabilities';
 
 export interface CompressMetrics {
-  core: CoreKind;
+  engine: 'ffmpeg.wasm' | 'webcodecs';
+  core?: CoreKind;
   preset: string;
   crf: number;
   height: number;
