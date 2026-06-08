@@ -5,6 +5,7 @@ import { CORE_APPROX_MB, chooseCore, detectCapabilities } from './capabilities';
 import { compress, type EngineChoice } from './compressor';
 import { type CompressMetrics, formatBytes, heapMB, reductionPct } from './measure';
 import { type CompressOptions, DEFAULT_OPTIONS, PRESETS } from './options';
+import { canSaveInPlace, saveOutput } from './save';
 import { probeWebCodecs } from './webcodecs';
 
 const byId = <T extends HTMLElement>(id: string): T => {
@@ -121,12 +122,20 @@ compressBtn.addEventListener('click', async () => {
       peakHeapMB: heapMB(),
     };
 
-    const url = URL.createObjectURL(new Blob([data], { type: 'video/mp4' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `compressed-${file.name.replace(/\.[^.]+$/, '')}.mp4`;
-    link.textContent = `Download result (${formatBytes(metrics.outputBytes)})`;
-    resultEl.replaceChildren(link);
+    const suggestedName = `compressed-${file.name.replace(/\.[^.]+$/, '')}.mp4`;
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.textContent = `${canSaveInPlace() ? 'Save' : 'Download'} result (${formatBytes(metrics.outputBytes)})`;
+    saveBtn.addEventListener('click', async () => {
+      try {
+        const result = await saveOutput(data, suggestedName);
+        if (result === 'saved') log(`Saved ${suggestedName}.`);
+        else if (result === 'downloaded') log(`Downloaded ${suggestedName}.`);
+      } catch (e) {
+        log(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    });
+    resultEl.replaceChildren(saveBtn);
 
     log(
       `Done [${engine}] · ${(elapsedMs / 1000).toFixed(1)}s · ${formatBytes(metrics.inputBytes)} → ` +
