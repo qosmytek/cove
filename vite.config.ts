@@ -30,8 +30,9 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#1a1a1a',
         theme_color: '#1a1a1a',
-        icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
       },
+      // Generate the PNG/maskable/apple-touch icon set from public/icon.svg (pwa-assets.config.ts).
+      pwaAssets: { config: true, overrideManifestIcons: true },
       injectManifest: {
         // Precache the light shell only; the heavy ffmpeg cores are cached on first use (sw.ts).
         globPatterns: ['**/*.{html,css,js,svg,webmanifest}'],
