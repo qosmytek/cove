@@ -4,7 +4,7 @@
 import { CORE_APPROX_MB, chooseCore, detectCapabilities } from './capabilities';
 import { compress, type EngineChoice } from './compressor';
 import { type CompressMetrics, formatBytes, heapMB, reductionPct } from './measure';
-import { type CompressOptions, DEFAULT_OPTIONS, PRESETS } from './options';
+import { type CompressOptions, DEFAULT_OPTIONS, QUALITIES, type Quality } from './options';
 import { canSaveInPlace, saveOutput } from './save';
 import { probeWebCodecs } from './webcodecs';
 
@@ -22,8 +22,7 @@ const progressEl = byId<HTMLProgressElement>('progress');
 const logEl = byId<HTMLPreElement>('log');
 const resultEl = byId<HTMLDivElement>('result');
 const engineSel = byId<HTMLSelectElement>('engine');
-const presetSel = byId<HTMLSelectElement>('preset');
-const crfInput = byId<HTMLInputElement>('crf');
+const qualitySel = byId<HTMLSelectElement>('quality');
 const heightSel = byId<HTMLSelectElement>('height');
 const webcodecsEl = byId<HTMLDivElement>('webcodecs');
 
@@ -33,14 +32,18 @@ statusEl.textContent =
   `ffmpeg fallback core: ${chooseCore(caps) === 'mt' ? 'multi-threaded' : 'single-threaded'}`;
 
 // Seed the controls from the defaults (single source of truth in options.ts).
-for (const p of PRESETS) {
+const QUALITY_LABELS: Record<Quality, string> = {
+  high: 'High',
+  balanced: 'Balanced',
+  small: 'Small',
+};
+for (const q of QUALITIES) {
   const opt = document.createElement('option');
-  opt.value = p;
-  opt.textContent = p;
-  presetSel.appendChild(opt);
+  opt.value = q;
+  opt.textContent = QUALITY_LABELS[q];
+  qualitySel.appendChild(opt);
 }
-presetSel.value = DEFAULT_OPTIONS.preset;
-crfInput.value = String(DEFAULT_OPTIONS.crf);
+qualitySel.value = DEFAULT_OPTIONS.quality;
 heightSel.value = String(DEFAULT_OPTIONS.height);
 
 void probeWebCodecs().then((results) => {
@@ -75,8 +78,7 @@ compressBtn.addEventListener('click', async () => {
   const file = selectedFile;
   const choice = engineSel.value as EngineChoice;
   const options: CompressOptions = {
-    preset: presetSel.value,
-    crf: Number(crfInput.value),
+    quality: qualitySel.value as Quality,
     height: Number(heightSel.value),
   };
 
@@ -85,10 +87,7 @@ compressBtn.addEventListener('click', async () => {
   cancelBtn.disabled = false;
   progressEl.value = 0;
   const t0 = performance.now();
-  log(
-    `Compressing (engine: ${choice}) · preset=${options.preset} · crf=${options.crf} · ` +
-      `height=${options.height}p…`,
-  );
+  log(`Compressing (engine: ${choice}) · quality=${options.quality} · height=${options.height}p…`);
 
   try {
     const { data, engine } = await compress(
@@ -112,8 +111,7 @@ compressBtn.addEventListener('click', async () => {
     const elapsedMs = Math.round(performance.now() - t0);
     const metrics: CompressMetrics = {
       engine,
-      preset: options.preset,
-      crf: options.crf,
+      quality: options.quality,
       height: options.height,
       inputBytes: file.size,
       outputBytes: data.byteLength,

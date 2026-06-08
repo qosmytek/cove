@@ -5,7 +5,7 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import type { CoreKind } from './capabilities';
-import type { CompressOptions } from './options';
+import { type CompressOptions, qualityCrf } from './options';
 
 export interface LoadHandlers {
   onLog?: (line: string) => void;
@@ -38,7 +38,11 @@ export async function loadEngine(kind: CoreKind, handlers: LoadHandlers = {}): P
   return ffmpeg;
 }
 
-/** The representative Phase 0 job: scale to the chosen height, re-encode H.264 + AAC. */
+// x264 speed preset — fixed at a multi-thread-safe value; faster presets (veryfast and up)
+// can deadlock the multi-threaded core (the stall watchdog recovers regardless).
+const FFMPEG_PRESET = 'faster';
+
+/** Scale to the chosen height and re-encode H.264 (CRF from quality) + AAC. */
 export async function compress(
   ffmpeg: FFmpeg,
   file: File,
@@ -55,9 +59,9 @@ export async function compress(
     '-c:v',
     'libx264',
     '-preset',
-    opts.preset,
+    FFMPEG_PRESET,
     '-crf',
-    String(opts.crf),
+    String(qualityCrf(opts.quality)),
     '-c:a',
     'aac',
     '-b:a',

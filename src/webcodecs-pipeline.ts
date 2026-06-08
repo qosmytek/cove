@@ -8,7 +8,7 @@ import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
 import type { MultiBufferStream, Sample, Track, VisualSampleEntry } from 'mp4box';
 import { createFile, DataStream, MP4BoxBuffer } from 'mp4box';
 import { aacLcAsc } from './aac';
-import type { CompressOptions } from './options';
+import { type CompressOptions, qualityBitrate } from './options';
 
 // Cap queued decoder + encoder frames so a long clip doesn't pile up frames in memory (FR-V7).
 const MAX_INFLIGHT_FRAMES = 8;
@@ -155,7 +155,7 @@ export async function compressWebCodecs(
     codec: 'avc1.42001f',
     width: dstW,
     height: dstH,
-    bitrate: Math.round(2_000_000 * ((dstW * dstH) / (1280 * 720))),
+    bitrate: qualityBitrate(opts.quality, dstW, dstH),
     framerate: fps,
     hardwareAcceleration: 'prefer-hardware',
     avc: { format: 'avc' },

@@ -1,9 +1,10 @@
 // Lightweight measurement helpers for the compressor (size reduction, timing, heap).
 
+import type { Quality } from './options';
+
 export interface CompressMetrics {
   engine: 'ffmpeg.wasm' | 'webcodecs';
-  preset: string;
-  crf: number;
+  quality: Quality;
   height: number;
   inputBytes: number;
   outputBytes: number;
