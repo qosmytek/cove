@@ -25,7 +25,9 @@
         color: var(--fg);
       }
       h1 { font-size: 1.6rem; margin: 0 0 0.25rem; letter-spacing: -0.01em; }
-      .tagline { color: var(--muted); margin: 0 0 2rem; }
+      .tagline { color: var(--muted); margin: 0 0 1rem; }
+      .cmdk { display: inline-flex; gap: 0.4rem; align-items: center; margin: 0 0 1.75rem; padding: 0.25rem 0.6rem; font: inherit; font-size: 0.8rem; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+      .cmdk:hover, .cmdk:focus-visible { border-color: var(--accent); color: var(--fg); }
       .dropzone {
         display: flex;
         flex-direction: column;
@@ -63,12 +65,22 @@
       details summary { cursor: pointer; }
       #webcodecs ul { margin: 0.25rem 0; padding-left: 1.2rem; }
       pre#log { background: #8881; padding: 0.5rem; max-height: 9rem; overflow: auto; font-size: 0.78rem; white-space: pre-wrap; }
+      .palette-overlay { position: fixed; inset: 0; z-index: 10; display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh; background: #0007; }
+      .palette-overlay[hidden] { display: none; }
+      .palette { width: min(34rem, 92vw); background: Canvas; color: CanvasText; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 48px #0006; overflow: hidden; }
+      .palette-input { width: 100%; padding: 0.8rem 1rem; font: inherit; color: inherit; background: transparent; border: 0; border-bottom: 1px solid var(--line); }
+      .palette-list { list-style: none; margin: 0; padding: 0.3rem; max-height: 50vh; overflow: auto; }
+      .palette-option { padding: 0.5rem 0.75rem; border-radius: 7px; cursor: pointer; }
+      .palette-option.active { background: color-mix(in srgb, var(--accent) 20%, transparent); }
     </style>
   </head>
   <body>
     <main>
       <h1>Cove</h1>
       <p class="tagline">Compress video on your device — nothing is uploaded.</p>
+      <button id="cmdk" class="cmdk" type="button" aria-keyshortcuts="Meta+K Control+K">
+        ⌘K Commands
+      </button>
 
       <button id="dropzone" type="button" class="dropzone">
         <span class="dz-icon" aria-hidden="true">⬇</span>
@@ -103,7 +115,7 @@
       <p id="status-msg" class="status-msg" role="status" aria-live="polite"></p>
       <div id="result"></div>
 
-      <details>
+      <details id="details">
         <summary>Details</summary>
         <p id="status">Detecting capabilities…</p>
         <label

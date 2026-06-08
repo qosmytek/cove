@@ -12,6 +12,7 @@ import {
   type Quality,
   targetBitrate,
 } from './options';
+import { type Command, createPalette } from './palette';
 import { canSaveInPlace, saveOutput } from './save';
 import { probeWebCodecs } from './webcodecs';
 
@@ -38,6 +39,8 @@ const statusEl = byId<HTMLParagraphElement>('status');
 const engineSel = byId<HTMLSelectElement>('engine');
 const webcodecsEl = byId<HTMLDivElement>('webcodecs');
 const logEl = byId<HTMLPreElement>('log');
+const detailsEl = byId<HTMLDetailsElement>('details');
+const cmdkBtn = byId<HTMLButtonElement>('cmdk');
 
 const caps = detectCapabilities();
 statusEl.textContent =
@@ -251,4 +254,87 @@ cancelBtn.addEventListener('click', () => {
   controller?.abort();
   cancelBtn.hidden = true;
   statusMsg.textContent = 'Cancelling…';
+});
+
+// Command palette (⌘K / Ctrl-K): keyboard access to every primary action (FR-P10). Each
+// command drives the same control as the UI, so the two never drift.
+const commands: Command[] = [
+  {
+    id: 'choose',
+    title: 'Choose video…',
+    aliases: ['open', 'file', 'pick'],
+    run: () => dropzone.click(),
+  },
+  {
+    id: 'compress',
+    title: 'Compress',
+    aliases: ['start', 'run'],
+    run: () => compressBtn.click(),
+    enabled: () => !panel.hidden && !compressBtn.disabled,
+  },
+  { id: 'cancel', title: 'Cancel', run: () => cancelBtn.click(), enabled: () => !cancelBtn.hidden },
+  {
+    id: 'save',
+    title: 'Save result',
+    aliases: ['download', 'export'],
+    run: () => resultEl.querySelector('button')?.click(),
+    enabled: () => resultEl.querySelector('button') !== null,
+  },
+  {
+    id: 'q-high',
+    title: 'Quality: High',
+    run: () => {
+      qualitySel.value = 'high';
+    },
+  },
+  {
+    id: 'q-balanced',
+    title: 'Quality: Balanced',
+    run: () => {
+      qualitySel.value = 'balanced';
+    },
+  },
+  {
+    id: 'q-small',
+    title: 'Quality: Small',
+    run: () => {
+      qualitySel.value = 'small';
+    },
+  },
+  {
+    id: 'r-480',
+    title: 'Resolution: 480p',
+    run: () => {
+      heightSel.value = '480';
+    },
+  },
+  {
+    id: 'r-720',
+    title: 'Resolution: 720p',
+    run: () => {
+      heightSel.value = '720';
+    },
+  },
+  {
+    id: 'r-1080',
+    title: 'Resolution: 1080p',
+    run: () => {
+      heightSel.value = '1080';
+    },
+  },
+  {
+    id: 'details',
+    title: 'Toggle details',
+    run: () => {
+      detailsEl.open = !detailsEl.open;
+    },
+  },
+];
+const palette = createPalette(commands);
+cmdkBtn.addEventListener('click', () => palette.open());
+window.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    palette.open();
+  }
 });
