@@ -51,6 +51,17 @@ export async function compress(
   const input = 'input';
   const output = 'output.mp4';
   await ffmpeg.writeFile(input, await fetchFile(file));
+  // Target-size mode caps the bitrate; otherwise constant-quality (CRF).
+  const rate = opts.videoBitrate
+    ? [
+        '-b:v',
+        String(opts.videoBitrate),
+        '-maxrate',
+        String(Math.round(opts.videoBitrate * 1.45)),
+        '-bufsize',
+        String(opts.videoBitrate * 2),
+      ]
+    : ['-crf', String(qualityCrf(opts.quality))];
   await ffmpeg.exec([
     '-i',
     input,
@@ -60,8 +71,7 @@ export async function compress(
     'libx264',
     '-preset',
     FFMPEG_PRESET,
-    '-crf',
-    String(qualityCrf(opts.quality)),
+    ...rate,
     '-c:a',
     'aac',
     '-b:a',

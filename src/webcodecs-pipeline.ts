@@ -155,7 +155,7 @@ export async function compressWebCodecs(
     codec: 'avc1.42001f',
     width: dstW,
     height: dstH,
-    bitrate: qualityBitrate(opts.quality, dstW, dstH),
+    bitrate: opts.videoBitrate ?? qualityBitrate(opts.quality, dstW, dstH),
     framerate: fps,
     hardwareAcceleration: 'prefer-hardware',
     avc: { format: 'avc' },

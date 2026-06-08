@@ -5,6 +5,7 @@ import type { Quality } from './options';
 export interface CompressMetrics {
   engine: 'ffmpeg.wasm' | 'webcodecs';
   quality: Quality;
+  videoBitrate?: number; // set in target-size mode
   height: number;
   inputBytes: number;
   outputBytes: number;

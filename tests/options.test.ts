@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_OPTIONS, QUALITIES, qualityBitrate, qualityCrf } from '../src/options';
+import {
+  DEFAULT_OPTIONS,
+  QUALITIES,
+  qualityBitrate,
+  qualityCrf,
+  targetBitrate,
+} from '../src/options';
 
 describe('compression options', () => {
   it('default quality is one of the offered qualities', () => {
@@ -18,5 +24,10 @@ describe('compression options', () => {
     expect(qualityBitrate('balanced', 1920, 1080)).toBeGreaterThan(
       qualityBitrate('balanced', 1280, 720),
     );
+  });
+  it('targetBitrate scales inversely with duration, reserves audio, and floors at 0', () => {
+    expect(targetBitrate(10, 30)).toBeGreaterThan(targetBitrate(10, 60));
+    expect(targetBitrate(0, 60)).toBe(0);
+    expect(targetBitrate(10, 0)).toBe(0);
   });
 });

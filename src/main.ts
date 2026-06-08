@@ -4,7 +4,13 @@
 import { CORE_APPROX_MB, chooseCore, detectCapabilities } from './capabilities';
 import { compress, type EngineChoice } from './compressor';
 import { type CompressMetrics, formatBytes, heapMB, reductionPct } from './measure';
-import { type CompressOptions, DEFAULT_OPTIONS, QUALITIES, type Quality } from './options';
+import {
+  type CompressOptions,
+  DEFAULT_OPTIONS,
+  QUALITIES,
+  type Quality,
+  targetBitrate,
+} from './options';
 import { canSaveInPlace, saveOutput } from './save';
 import { probeWebCodecs } from './webcodecs';
 
@@ -23,6 +29,7 @@ const logEl = byId<HTMLPreElement>('log');
 const resultEl = byId<HTMLDivElement>('result');
 const engineSel = byId<HTMLSelectElement>('engine');
 const qualitySel = byId<HTMLSelectElement>('quality');
+const targetInput = byId<HTMLInputElement>('target');
 const heightSel = byId<HTMLSelectElement>('height');
 const webcodecsEl = byId<HTMLDivElement>('webcodecs');
 
@@ -61,25 +68,55 @@ void probeWebCodecs().then((results) => {
 
 let selectedFile: File | null = null;
 let controller: AbortController | null = null;
+let durationSec = 0;
 
 function log(line: string): void {
   logEl.textContent += `${line}\n`;
   logEl.scrollTop = logEl.scrollHeight;
 }
 
+// Read the clip's duration (for target-size estimation) without decoding it.
+function probeDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    const url = URL.createObjectURL(file);
+    const done = (d: number): void => {
+      URL.revokeObjectURL(url);
+      resolve(Number.isFinite(d) ? d : 0);
+    };
+    video.onloadedmetadata = () => done(video.duration);
+    video.onerror = () => done(0);
+    video.src = url;
+  });
+}
+
 fileInput.addEventListener('change', () => {
   selectedFile = fileInput.files?.[0] ?? null;
   compressBtn.disabled = !selectedFile;
   resultEl.textContent = '';
+  durationSec = 0;
+  if (selectedFile) {
+    void probeDuration(selectedFile).then((d) => {
+      durationSec = d;
+    });
+  }
 });
 
 compressBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
   const file = selectedFile;
   const choice = engineSel.value as EngineChoice;
+  const targetMB = Number(targetInput.value);
+  if (targetMB > 0 && durationSec <= 0) durationSec = await probeDuration(file);
+  const videoBitrate = targetBitrate(targetMB, durationSec);
+  if (targetMB > 0 && videoBitrate <= 0) {
+    log("Couldn't read the clip's duration; using the quality preset instead.");
+  }
   const options: CompressOptions = {
     quality: qualitySel.value as Quality,
     height: Number(heightSel.value),
+    ...(videoBitrate > 0 ? { videoBitrate } : {}),
   };
 
   controller = new AbortController();
@@ -87,7 +124,10 @@ compressBtn.addEventListener('click', async () => {
   cancelBtn.disabled = false;
   progressEl.value = 0;
   const t0 = performance.now();
-  log(`Compressing (engine: ${choice}) · quality=${options.quality} · height=${options.height}p…`);
+  const modeLabel = options.videoBitrate
+    ? `target ${targetMB} MB (~${Math.round(options.videoBitrate / 1000)} kbps)`
+    : `quality=${options.quality}`;
+  log(`Compressing (engine: ${choice}) · ${modeLabel} · height=${options.height}p…`);
 
   try {
     const { data, engine } = await compress(
@@ -112,6 +152,7 @@ compressBtn.addEventListener('click', async () => {
     const metrics: CompressMetrics = {
       engine,
       quality: options.quality,
+      videoBitrate: options.videoBitrate,
       height: options.height,
       inputBytes: file.size,
       outputBytes: data.byteLength,
