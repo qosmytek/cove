@@ -1,6 +1,6 @@
 # Performance Budget
 
-> **Status:** Stable (budget ratified 2026-06-06) · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Stable (budget ratified 2026-06-06; peak-memory added 2026-06-08) · **Last updated:** 2026-06-08 · **Owner:** Victor Senna Seleimend
 > **Section:** [Quality](./) · ← [Documentation Index](../README.md)
 
 **This is the most important quality document.** Payload weight is the #1 risk to the product
@@ -51,7 +51,14 @@ Ratified 2026-06-07 from the
 - **`ffmpeg.wasm` fallback — best-effort, not gated:** must complete **without OOM**, with progress and
   a working cancel; it is materially slower (~4× real-time on the proxy) and is the compatibility path,
   not the performance target.
-- **Memory:** stay within the device's safe envelope; surface limits / stream large inputs (FR-V7).
+- **Memory (peak JS heap):** for the reference **~1-minute 1080p→720p** clip on the WebCodecs path,
+  **≤ 400 MB** (measured ~238 MB at Stage 3 after bounding the decode/encode pipeline; the headroom
+  covers run-to-run / GC variance and device differences, and stays well clear of the pre-fix ~595 MB
+  regression). `performance.memory` is a coarse JS-heap proxy, so the **binding check is no-OOM on the
+  [A54](../engineering/testing-strategy.md#device--browser-matrix)**. Peak scales as **≈ input size + a
+  bounded (~150 MB) pipeline**, because the input is held whole until **Stage 4** streams it from OPFS —
+  very large inputs will exceed this until then. Changing this number requires an
+  [ADR](../architecture/decisions/README.md).
 
 ## Enforcement in CI
 - **Bundle-size gate:** fail the build if initial JS/total exceeds budget (e.g., size-limit / bundlesize).
