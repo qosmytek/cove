@@ -10,6 +10,10 @@ import { createFile, DataStream, MP4BoxBuffer } from 'mp4box';
 import { aacLcAsc } from './aac';
 import type { CompressOptions } from './options';
 
+// Cap queued decoder + encoder frames so a long clip doesn't pile up frames in memory (FR-V7).
+const MAX_INFLIGHT_FRAMES = 8;
+const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
+
 export interface WCHandlers {
   onLog?: (line: string) => void;
   onProgress?: (ratio: number) => void;
@@ -193,6 +197,15 @@ export async function compressWebCodecs(
 
   for (const s of videoSamples) {
     if (!s.data) continue;
+    // Backpressure: keep only a few frames in flight so a long clip doesn't pile up
+    // decoded/encoded frames in memory (the bulk of the Phase 0 peak).
+    while (
+      decoder.decodeQueueSize + encoder.encodeQueueSize >= MAX_INFLIGHT_FRAMES &&
+      !signal?.aborted
+    ) {
+      await tick();
+    }
+    if (signal?.aborted) break;
     decoder.decode(
       new EncodedVideoChunk({
         type: s.is_sync ? 'key' : 'delta',
@@ -203,6 +216,7 @@ export async function compressWebCodecs(
     );
   }
 
+  if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
   await decoder.flush();
   await encoder.flush();
 
