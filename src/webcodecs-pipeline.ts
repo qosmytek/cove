@@ -1,11 +1,13 @@
-// WebCodecs transcode pipeline (Phase 0 benchmark vs ffmpeg.wasm):
+// WebCodecs transcode pipeline:
 //   demux (mp4box) → VideoDecoder → downscale (OffscreenCanvas) → VideoEncoder → mux (mp4-muxer)
-// Uses the device's hardware H.264 codecs. Video-only for the spike — audio is
-// dropped. Lazily imported from main.ts so mp4box/mp4-muxer stay out of the entry bundle.
+// Uses the device's hardware H.264 codecs. Audio: AAC-LC is passed through (remuxed) to
+// keep sound without re-encoding; other audio codecs throw so the orchestrator falls back
+// to ffmpeg. Lazily imported so mp4box/mp4-muxer stay out of the entry bundle.
 
 import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
 import type { MultiBufferStream, Sample, Track, VisualSampleEntry } from 'mp4box';
 import { createFile, DataStream, MP4BoxBuffer } from 'mp4box';
+import { aacLcAsc } from './aac';
 import type { CompressOptions } from './options';
 
 export interface WCHandlers {
@@ -15,9 +17,10 @@ export interface WCHandlers {
 }
 
 interface Demuxed {
-  track: Track;
-  samples: Sample[];
-  description: Uint8Array;
+  videoTrack: Track;
+  videoSamples: Sample[];
+  videoDescription: Uint8Array;
+  audio?: { track: Track; samples: Sample[] };
 }
 
 /** Serialize the avcC box and strip its 8-byte header → the AVCDecoderConfigurationRecord. */
@@ -35,30 +38,41 @@ function extractDescription(entry: VisualSampleEntry): Uint8Array {
 function demux(file: File): Promise<Demuxed> {
   return new Promise<Demuxed>((resolve, reject) => {
     const mp4 = createFile();
-    const samples: Sample[] = [];
-    let track: Track | undefined;
+    const videoSamples: Sample[] = [];
+    const audioSamples: Sample[] = [];
+    let videoTrack: Track | undefined;
+    let audioTrack: Track | undefined;
     let done = false;
 
     mp4.onError = (_module, message) => reject(new Error(`mp4box: ${message}`));
     mp4.onReady = (info) => {
-      track = info.videoTracks[0];
-      if (!track) {
+      videoTrack = info.videoTracks[0];
+      if (!videoTrack) {
         reject(new Error('no H.264 video track found'));
         return;
       }
-      mp4.setExtractionOptions(track.id);
+      audioTrack = info.audioTracks[0]; // may be undefined (no audio)
+      mp4.setExtractionOptions(videoTrack.id);
+      if (audioTrack) mp4.setExtractionOptions(audioTrack.id);
       mp4.start();
     };
-    mp4.onSamples = (_id, _user, batch) => {
-      if (done || !track) return;
-      for (const s of batch) samples.push(s);
-      if (samples.length >= track.nb_samples) {
+    mp4.onSamples = (id, _user, batch) => {
+      if (done) return;
+      if (videoTrack && id === videoTrack.id) {
+        for (const s of batch) videoSamples.push(s);
+      } else if (audioTrack && id === audioTrack.id) {
+        for (const s of batch) audioSamples.push(s);
+      }
+      const videoReady = videoTrack !== undefined && videoSamples.length >= videoTrack.nb_samples;
+      const audioReady = audioTrack === undefined || audioSamples.length >= audioTrack.nb_samples;
+      if (videoTrack && videoReady && audioReady) {
         done = true;
         try {
           resolve({
-            track,
-            samples,
-            description: extractDescription(samples[0].description as VisualSampleEntry),
+            videoTrack,
+            videoSamples,
+            videoDescription: extractDescription(videoSamples[0].description as VisualSampleEntry),
+            audio: audioTrack ? { track: audioTrack, samples: audioSamples } : undefined,
           });
         } catch (e) {
           reject(e instanceof Error ? e : new Error(String(e)));
@@ -86,19 +100,46 @@ export async function compressWebCodecs(
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
   log('Demuxing…');
-  const { track, samples, description } = await demux(file);
-  const srcW = track.video?.width ?? track.track_width;
-  const srcH = track.video?.height ?? track.track_height;
+  const { videoTrack, videoSamples, videoDescription, audio } = await demux(file);
+  const srcW = videoTrack.video?.width ?? videoTrack.track_width;
+  const srcH = videoTrack.video?.height ?? videoTrack.track_height;
   const dstH = opts.height;
   const dstW = Math.max(2, Math.round((srcW * dstH) / srcH / 2) * 2); // even width, keep aspect
   const fps =
-    track.duration > 0 ? Math.round((track.nb_samples * track.timescale) / track.duration) : 30;
-  const total = samples.length;
-  log(`${total} frames · ${srcW}×${srcH} → ${dstW}×${dstH} · ~${fps} fps · audio dropped`);
+    videoTrack.duration > 0
+      ? Math.round((videoTrack.nb_samples * videoTrack.timescale) / videoTrack.duration)
+      : 30;
+
+  // Audio: pass AAC-LC through unchanged; anything else throws → ffmpeg fallback (re-encodes).
+  let audioOut: { channels: number; sampleRate: number; asc: Uint8Array } | undefined;
+  if (audio) {
+    if (audio.track.codec !== 'mp4a.40.2') {
+      throw new Error(`audio codec "${audio.track.codec}" not supported by the WebCodecs path`);
+    }
+    const channels = audio.track.audio?.channel_count ?? 2;
+    const sampleRate = audio.track.audio?.sample_rate ?? 0;
+    const asc = aacLcAsc(sampleRate, channels);
+    if (!asc) {
+      throw new Error(`audio sample rate ${sampleRate} Hz not supported by the WebCodecs path`);
+    }
+    audioOut = { channels, sampleRate, asc };
+  }
+
+  log(
+    `${videoSamples.length} frames · ${srcW}×${srcH} → ${dstW}×${dstH} · ~${fps} fps · ` +
+      `audio: ${audioOut ? 'AAC passthrough' : 'none'}`,
+  );
 
   const muxer = new Muxer({
     target: new ArrayBufferTarget(),
     video: { codec: 'avc', width: dstW, height: dstH, frameRate: fps },
+    ...(audioOut && {
+      audio: {
+        codec: 'aac' as const,
+        numberOfChannels: audioOut.channels,
+        sampleRate: audioOut.sampleRate,
+      },
+    }),
     fastStart: 'in-memory',
   });
 
@@ -132,15 +173,15 @@ export async function compressWebCodecs(
       encoder.encode(scaled);
       scaled.close();
       encoded += 1;
-      handlers.onProgress?.(encoded / total);
+      handlers.onProgress?.(encoded / videoSamples.length);
     },
     error: (e) => log(`decoder error: ${e.message}`),
   });
   decoder.configure({
-    codec: track.codec,
+    codec: videoTrack.codec,
     codedWidth: srcW,
     codedHeight: srcH,
-    description,
+    description: videoDescription,
     hardwareAcceleration: 'prefer-hardware',
   });
 
@@ -150,7 +191,7 @@ export async function compressWebCodecs(
   };
   signal?.addEventListener('abort', onAbort, { once: true });
 
-  for (const s of samples) {
+  for (const s of videoSamples) {
     if (!s.data) continue;
     decoder.decode(
       new EncodedVideoChunk({
@@ -164,6 +205,32 @@ export async function compressWebCodecs(
 
   await decoder.flush();
   await encoder.flush();
+
+  // Remux the original AAC frames alongside the re-encoded video. Both reference the
+  // source timeline (µs), so they stay in sync; mp4-muxer interleaves on finalize.
+  if (audio && audioOut) {
+    const meta: EncodedAudioChunkMetadata = {
+      decoderConfig: {
+        codec: 'mp4a.40.2',
+        sampleRate: audioOut.sampleRate,
+        numberOfChannels: audioOut.channels,
+        description: audioOut.asc,
+      },
+    };
+    let first = true;
+    for (const s of audio.samples) {
+      if (!s.data) continue;
+      muxer.addAudioChunkRaw(
+        s.data,
+        'key',
+        (s.cts * 1e6) / s.timescale,
+        (s.duration * 1e6) / s.timescale,
+        first ? meta : undefined,
+      );
+      first = false;
+    }
+  }
+
   muxer.finalize();
   decoder.close();
   encoder.close();

@@ -33,7 +33,8 @@ serves the production build the same way.
 The shell has an **Engine** selector:
 - **ffmpeg.wasm** — the universal, proven path (any codec, but a slow software transcode).
 - **WebCodecs (hardware)** — the fast-path spike: demux → `VideoDecoder` → downscale → `VideoEncoder` →
-  mux. **Video-only** (audio is dropped) and it targets a **bitrate** (the preset/CRF knobs don't apply).
+  mux. It **passes AAC audio through** (other audio codecs fall back to ffmpeg) and targets a **bitrate**
+  (the preset/CRF knobs don't apply).
 
 Benchmark by running the **same clip** through each engine and comparing the **encode** time.
 
