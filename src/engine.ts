@@ -1,6 +1,6 @@
-// The heavy module: pulls in ffmpeg.wasm. It is imported **dynamically** from main.ts
-// (only after the user clicks Compress and accepts the size disclosure), so it is
-// code-split out of the initial bundle — nothing here loads on page load.
+// The heavy module: pulls in ffmpeg.wasm. It is imported **dynamically** by the orchestrator
+// (compressor.ts, only after the user starts a compression and accepts the size disclosure), so it
+// is code-split out of the initial bundle — nothing here loads on page load.
 
 import { FFFSType, FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';

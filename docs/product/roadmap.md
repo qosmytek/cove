@@ -54,6 +54,13 @@ PWA shell, command palette, accessibility pass, and the
 [performance budget](../quality/performance-budget.md) enforced in [CI](../engineering/ci-cd.md).
 **Exit criteria:** all [v1 acceptance criteria](./prd.md#7-acceptance-criteria-v1-done) pass.
 
+**Status (2026-06-08): implemented.** The v1 compressor is built and CI-green — the WebCodecs↔ffmpeg
+orchestrator with single-threaded retry (FR-V8), AAC audio passthrough (FR-V9), streamed/bounded
+memory (FR-V7), the calm drop-zone UI with quality presets + target-size (FR-V1/V2) and File System
+Access save (FR-V5), the ⌘K command palette (FR-P10), the installable offline PWA (FR-P5), and
+worker-based compute (FR-P3). Remaining before "done": the manual reference-device gates — a physical
+A54 run, offline/install, and a screen-reader + keyboard pass.
+
 ## Phase 2 — Platform hardening
 **Goal:** turn "one tool" into "a shell that tools slot into."
 **Includes:** shared shell/router, capability-detection layer, fallback paths, the

@@ -35,6 +35,10 @@ automatically on every change.
 ## Supply chain
 - Minimal dependencies; pinned versions; periodic audit.
 - No third-party runtime scripts ([Calm by Design](../features/07-calm-design.md)).
+- **Advisories:** runtime dependencies are clean (`npm audit --omit=dev` → 0). The known advisories are
+  all in build/CI tooling (esbuild's dev server; `tmp`/`uuid` via `@lhci/cli`) — none shipped to users,
+  and each currently needs a breaking toolchain bump (Vite 8 / an `@lhci/cli` downgrade), so they're
+  accepted for now and revisited when the toolchain is upgraded.
 
 ## Open questions
 - Real-device **automation** (cloud device farm vs. self-hosted) stays deferred — Phase 1 uses the
