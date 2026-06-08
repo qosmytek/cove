@@ -3,7 +3,8 @@
 // (capabilities, engine override, log) live behind the Details disclosure.
 
 import { CORE_APPROX_MB, chooseCore, detectCapabilities } from './capabilities';
-import { compress, type EngineChoice } from './compressor';
+import { compress, type EngineChoice, webCodecsSupported } from './compressor';
+import { capabilityNote, friendlyError } from './errors';
 import { type CompressMetrics, formatBytes, heapMB, reductionPct } from './measure';
 import {
   type CompressOptions,
@@ -41,11 +42,17 @@ const webcodecsEl = byId<HTMLDivElement>('webcodecs');
 const logEl = byId<HTMLPreElement>('log');
 const detailsEl = byId<HTMLDetailsElement>('details');
 const cmdkBtn = byId<HTMLButtonElement>('cmdk');
+const capabilityEl = byId<HTMLParagraphElement>('capability');
 
 const caps = detectCapabilities();
 statusEl.textContent =
   `crossOriginIsolated: ${caps.crossOriginIsolated} · SharedArrayBuffer: ${caps.sharedArrayBuffer} · ` +
   `ffmpeg fallback core: ${chooseCore(caps) === 'mt' ? 'multi-threaded' : 'single-threaded'}`;
+
+// User-facing note on which compression path this browser will use (FR-P7).
+void webCodecsSupported().then((ok) => {
+  capabilityEl.textContent = capabilityNote(ok, caps.crossOriginIsolated);
+});
 
 // Seed the controls from the defaults (single source of truth in options.ts).
 const QUALITY_LABELS: Record<Quality, string> = {
@@ -236,11 +243,14 @@ compressBtn.addEventListener('click', async () => {
     );
     console.table(metrics);
   } catch (err) {
-    const msg = controller.signal.aborted
-      ? 'Cancelled.'
-      : `Error: ${err instanceof Error ? err.message : String(err)}`;
-    statusMsg.textContent = msg;
-    log(msg);
+    const raw = err instanceof Error ? err.message : String(err);
+    if (controller.signal.aborted) {
+      statusMsg.textContent = 'Cancelled.';
+      log('Cancelled.');
+    } else {
+      statusMsg.textContent = friendlyError(raw);
+      log(`Error: ${raw}`);
+    }
   } finally {
     progressEl.hidden = true;
     progressEl.value = 0;
