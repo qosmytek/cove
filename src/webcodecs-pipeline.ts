@@ -1,8 +1,11 @@
-// WebCodecs transcode pipeline:
-//   demux (mp4box) → VideoDecoder → downscale (OffscreenCanvas) → VideoEncoder → mux (mp4-muxer)
-// Uses the device's hardware H.264 codecs. Audio: AAC-LC is passed through (remuxed) to
-// keep sound without re-encoding; other audio codecs throw so the orchestrator falls back
-// to ffmpeg. Lazily imported so mp4box/mp4-muxer stay out of the entry bundle.
+// WebCodecs transcode pipeline (streaming + backpressured, FR-V7):
+//   read file in ranges → demux (mp4box) → VideoDecoder → downscale (OffscreenCanvas)
+//   → VideoEncoder → mux (mp4-muxer)
+// The input is fed to mp4box in 4 MiB ranges following its requested offsets (it skips the
+// mdat to find a trailing moov, then seeks back), samples are released as they're consumed,
+// and the decode/encode pipeline is bounded — so a long clip never holds the whole input or
+// every frame at once. AAC-LC audio is passed through (remuxed); other audio codecs throw so
+// the orchestrator falls back to ffmpeg. Lazily imported.
 
 import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
 import type { MultiBufferStream, Sample, Track, VisualSampleEntry } from 'mp4box';
@@ -10,22 +13,10 @@ import { createFile, DataStream, MP4BoxBuffer } from 'mp4box';
 import { aacLcAsc } from './aac';
 import { type CompressOptions, qualityBitrate } from './options';
 
-// Cap queued decoder + encoder frames so a long clip doesn't pile up frames in memory (FR-V7).
-const MAX_INFLIGHT_FRAMES = 8;
+const READ_CHUNK = 4 * 1024 * 1024; // 4 MiB ranges fed to mp4box
+const MAX_INFLIGHT_FRAMES = 8; // decoder + encoder queued frames (heap bound)
+const MAX_QUEUED_SAMPLES = 64; // demuxed-but-undecoded video samples held in memory
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
-
-export interface WCHandlers {
-  onLog?: (line: string) => void;
-  onProgress?: (ratio: number) => void;
-  signal?: AbortSignal;
-}
-
-interface Demuxed {
-  videoTrack: Track;
-  videoSamples: Sample[];
-  videoDescription: Uint8Array;
-  audio?: { track: Track; samples: Sample[] };
-}
 
 /** Serialize the avcC box and strip its 8-byte header → the AVCDecoderConfigurationRecord. */
 function extractDescription(entry: VisualSampleEntry): Uint8Array {
@@ -39,59 +30,10 @@ function extractDescription(entry: VisualSampleEntry): Uint8Array {
   return desc;
 }
 
-function demux(file: File): Promise<Demuxed> {
-  return new Promise<Demuxed>((resolve, reject) => {
-    const mp4 = createFile();
-    const videoSamples: Sample[] = [];
-    const audioSamples: Sample[] = [];
-    let videoTrack: Track | undefined;
-    let audioTrack: Track | undefined;
-    let done = false;
-
-    mp4.onError = (_module, message) => reject(new Error(`mp4box: ${message}`));
-    mp4.onReady = (info) => {
-      videoTrack = info.videoTracks[0];
-      if (!videoTrack) {
-        reject(new Error('no H.264 video track found'));
-        return;
-      }
-      audioTrack = info.audioTracks[0]; // may be undefined (no audio)
-      mp4.setExtractionOptions(videoTrack.id);
-      if (audioTrack) mp4.setExtractionOptions(audioTrack.id);
-      mp4.start();
-    };
-    mp4.onSamples = (id, _user, batch) => {
-      if (done) return;
-      if (videoTrack && id === videoTrack.id) {
-        for (const s of batch) videoSamples.push(s);
-      } else if (audioTrack && id === audioTrack.id) {
-        for (const s of batch) audioSamples.push(s);
-      }
-      const videoReady = videoTrack !== undefined && videoSamples.length >= videoTrack.nb_samples;
-      const audioReady = audioTrack === undefined || audioSamples.length >= audioTrack.nb_samples;
-      if (videoTrack && videoReady && audioReady) {
-        done = true;
-        try {
-          resolve({
-            videoTrack,
-            videoSamples,
-            videoDescription: extractDescription(videoSamples[0].description as VisualSampleEntry),
-            audio: audioTrack ? { track: audioTrack, samples: audioSamples } : undefined,
-          });
-        } catch (e) {
-          reject(e instanceof Error ? e : new Error(String(e)));
-        }
-      }
-    };
-
-    file
-      .arrayBuffer()
-      .then((ab) => {
-        mp4.appendBuffer(MP4BoxBuffer.fromArrayBuffer(ab, 0));
-        mp4.flush();
-      })
-      .catch(reject);
-  });
+export interface WCHandlers {
+  onLog?: (line: string) => void;
+  onProgress?: (ratio: number) => void;
+  signal?: AbortSignal;
 }
 
 export async function compressWebCodecs(
@@ -101,36 +43,103 @@ export async function compressWebCodecs(
 ): Promise<Uint8Array<ArrayBuffer>> {
   const log = (m: string): void => handlers.onLog?.(m);
   const { signal } = handlers;
-  if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
+  const aborted = (): boolean => signal?.aborted === true;
+  if (aborted()) throw new DOMException('aborted', 'AbortError');
 
   log('Demuxing…');
-  const { videoTrack, videoSamples, videoDescription, audio } = await demux(file);
-  const srcW = videoTrack.video?.width ?? videoTrack.track_width;
-  const srcH = videoTrack.video?.height ?? videoTrack.track_height;
+  const mp4 = createFile();
+
+  // Demux state, populated as the file streams in.
+  let videoTrack: Track | undefined;
+  let audioTrack: Track | undefined;
+  let audioOut: { channels: number; sampleRate: number; asc: Uint8Array } | undefined;
+  let audioUnsupported: string | undefined;
+  let demuxError: Error | undefined;
+  const videoQueue: Sample[] = [];
+  const audioQueue: Sample[] = [];
+  let resolveReady: (() => void) | undefined;
+  const ready = new Promise<void>((r) => {
+    resolveReady = r;
+  });
+
+  mp4.onError = (_module, message) => {
+    demuxError = new Error(`mp4box: ${message}`);
+    resolveReady?.();
+  };
+  mp4.onReady = (info) => {
+    videoTrack = info.videoTracks[0];
+    audioTrack = info.audioTracks[0];
+    if (videoTrack) {
+      mp4.setExtractionOptions(videoTrack.id);
+      if (audioTrack?.codec === 'mp4a.40.2') {
+        const channels = audioTrack.audio?.channel_count ?? 2;
+        const sampleRate = audioTrack.audio?.sample_rate ?? 0;
+        const asc = aacLcAsc(sampleRate, channels);
+        if (asc) {
+          audioOut = { channels, sampleRate, asc };
+          mp4.setExtractionOptions(audioTrack.id);
+        } else {
+          audioUnsupported = `sample rate ${sampleRate} Hz`;
+        }
+      } else if (audioTrack) {
+        audioUnsupported = `codec "${audioTrack.codec}"`;
+      }
+      mp4.start();
+    }
+    resolveReady?.();
+  };
+  mp4.onSamples = (id, _user, samples) => {
+    if (videoTrack && id === videoTrack.id) {
+      for (const s of samples) videoQueue.push(s);
+    } else if (audioTrack && id === audioTrack.id) {
+      for (const s of samples) audioQueue.push(s);
+    }
+  };
+
+  // Producer: feed the file in ranges, following mp4box's requested next offset (it skips
+  // the mdat while finding the moov, then seeks back to it — so we must honor appendBuffer's
+  // return, not read straight through). Pauses when the consumer is behind.
+  let pos = 0;
+  let demuxComplete = false;
+  const maxIterations = Math.ceil(file.size / READ_CHUNK) * 2 + 64; // converge guard
+  const produce = async (): Promise<void> => {
+    try {
+      let iterations = 0;
+      while (pos < file.size && !demuxError && !aborted()) {
+        if (++iterations > maxIterations) throw new Error('demux did not converge');
+        while (videoQueue.length >= MAX_QUEUED_SAMPLES && !demuxError && !aborted()) await tick();
+        const end = Math.min(pos + READ_CHUNK, file.size);
+        const buf = MP4BoxBuffer.fromArrayBuffer(await file.slice(pos, end).arrayBuffer(), pos);
+        const next = mp4.appendBuffer(buf);
+        pos = typeof next === 'number' && next !== pos ? next : end;
+      }
+      if (!aborted()) mp4.flush();
+    } catch (e) {
+      demuxError ??= e instanceof Error ? e : new Error(String(e));
+    } finally {
+      demuxComplete = true;
+      resolveReady?.();
+    }
+  };
+  const produceP = produce();
+
+  await ready;
+  if (demuxError) throw demuxError;
+  if (!videoTrack) throw new Error('no H.264 video track found');
+  if (audioUnsupported) {
+    throw new Error(`audio ${audioUnsupported} not supported by the WebCodecs path`);
+  }
+  const vt = videoTrack;
+
+  const srcW = vt.video?.width ?? vt.track_width;
+  const srcH = vt.video?.height ?? vt.track_height;
   const dstH = opts.height;
   const dstW = Math.max(2, Math.round((srcW * dstH) / srcH / 2) * 2); // even width, keep aspect
-  const fps =
-    videoTrack.duration > 0
-      ? Math.round((videoTrack.nb_samples * videoTrack.timescale) / videoTrack.duration)
-      : 30;
-
-  // Audio: pass AAC-LC through unchanged; anything else throws → ffmpeg fallback (re-encodes).
-  let audioOut: { channels: number; sampleRate: number; asc: Uint8Array } | undefined;
-  if (audio) {
-    if (audio.track.codec !== 'mp4a.40.2') {
-      throw new Error(`audio codec "${audio.track.codec}" not supported by the WebCodecs path`);
-    }
-    const channels = audio.track.audio?.channel_count ?? 2;
-    const sampleRate = audio.track.audio?.sample_rate ?? 0;
-    const asc = aacLcAsc(sampleRate, channels);
-    if (!asc) {
-      throw new Error(`audio sample rate ${sampleRate} Hz not supported by the WebCodecs path`);
-    }
-    audioOut = { channels, sampleRate, asc };
-  }
+  const fps = vt.duration > 0 ? Math.round((vt.nb_samples * vt.timescale) / vt.duration) : 30;
+  const total = vt.nb_samples;
 
   log(
-    `${videoSamples.length} frames · ${srcW}×${srcH} → ${dstW}×${dstH} · ~${fps} fps · ` +
+    `${total} frames · ${srcW}×${srcH} → ${dstW}×${dstH} · ~${fps} fps · ` +
       `audio: ${audioOut ? 'AAC passthrough' : 'none'}`,
   );
 
@@ -177,17 +186,11 @@ export async function compressWebCodecs(
       encoder.encode(scaled);
       scaled.close();
       encoded += 1;
-      handlers.onProgress?.(encoded / videoSamples.length);
+      handlers.onProgress?.(encoded / total);
     },
     error: (e) => log(`decoder error: ${e.message}`),
   });
-  decoder.configure({
-    codec: videoTrack.codec,
-    codedWidth: srcW,
-    codedHeight: srcH,
-    description: videoDescription,
-    hardwareAcceleration: 'prefer-hardware',
-  });
+  let decoderConfigured = false;
 
   const onAbort = (): void => {
     if (decoder.state !== 'closed') decoder.close();
@@ -195,56 +198,86 @@ export async function compressWebCodecs(
   };
   signal?.addEventListener('abort', onAbort, { once: true });
 
-  for (const s of videoSamples) {
-    if (!s.data) continue;
-    // Backpressure: keep only a few frames in flight so a long clip doesn't pile up
-    // decoded/encoded frames in memory (the bulk of the Phase 0 peak).
-    while (
-      decoder.decodeQueueSize + encoder.encodeQueueSize >= MAX_INFLIGHT_FRAMES &&
-      !signal?.aborted
-    ) {
-      await tick();
+  // Audio passthrough: drain progressively (and release) so mp4box can free the underlying
+  // file buffers as both tracks advance — otherwise interleaved audio pins the whole input.
+  const audioMeta: EncodedAudioChunkMetadata | undefined = audioOut && {
+    decoderConfig: {
+      codec: 'mp4a.40.2',
+      sampleRate: audioOut.sampleRate,
+      numberOfChannels: audioOut.channels,
+      description: audioOut.asc,
+    },
+  };
+  let audioFirst = true;
+  const drainAudio = (): void => {
+    if (!(audioOut && audioTrack)) return;
+    let last = -1;
+    while (audioQueue.length > 0) {
+      const s = audioQueue.shift();
+      if (!s) break;
+      if (s.data) {
+        muxer.addAudioChunkRaw(
+          s.data,
+          'key',
+          (s.cts * 1e6) / s.timescale,
+          (s.duration * 1e6) / s.timescale,
+          audioFirst ? audioMeta : undefined,
+        );
+        audioFirst = false;
+      }
+      last = s.number;
     }
-    if (signal?.aborted) break;
-    decoder.decode(
-      new EncodedVideoChunk({
-        type: s.is_sync ? 'key' : 'delta',
-        timestamp: (s.cts * 1e6) / s.timescale,
-        duration: (s.duration * 1e6) / s.timescale,
-        data: s.data,
-      }),
-    );
-  }
+    if (last >= 0) mp4.releaseUsedSamples(audioTrack.id, last);
+  };
 
-  if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
+  // Consumer: decode video with a bounded in-flight window, releasing each sample as it's
+  // handed off; configure the decoder lazily from the first sample's description.
+  const consume = async (): Promise<void> => {
+    while (!aborted()) {
+      drainAudio();
+      const s = videoQueue.shift();
+      if (!s) {
+        if (demuxComplete) break;
+        await tick();
+        continue;
+      }
+      while (
+        decoder.decodeQueueSize + encoder.encodeQueueSize >= MAX_INFLIGHT_FRAMES &&
+        !aborted()
+      ) {
+        await tick();
+      }
+      if (aborted() || !s.data) continue;
+      if (!decoderConfigured) {
+        decoder.configure({
+          codec: vt.codec,
+          codedWidth: srcW,
+          codedHeight: srcH,
+          description: extractDescription(s.description as VisualSampleEntry),
+          hardwareAcceleration: 'prefer-hardware',
+        });
+        decoderConfigured = true;
+      }
+      decoder.decode(
+        new EncodedVideoChunk({
+          type: s.is_sync ? 'key' : 'delta',
+          timestamp: (s.cts * 1e6) / s.timescale,
+          duration: (s.duration * 1e6) / s.timescale,
+          data: s.data,
+        }),
+      );
+      mp4.releaseUsedSamples(vt.id, s.number);
+    }
+    drainAudio();
+  };
+
+  await Promise.all([produceP, consume()]);
+  if (demuxError) throw demuxError;
+  if (aborted()) throw new DOMException('aborted', 'AbortError');
+  if (!decoderConfigured) throw new Error('no video samples were decoded');
+
   await decoder.flush();
   await encoder.flush();
-
-  // Remux the original AAC frames alongside the re-encoded video. Both reference the
-  // source timeline (µs), so they stay in sync; mp4-muxer interleaves on finalize.
-  if (audio && audioOut) {
-    const meta: EncodedAudioChunkMetadata = {
-      decoderConfig: {
-        codec: 'mp4a.40.2',
-        sampleRate: audioOut.sampleRate,
-        numberOfChannels: audioOut.channels,
-        description: audioOut.asc,
-      },
-    };
-    let first = true;
-    for (const s of audio.samples) {
-      if (!s.data) continue;
-      muxer.addAudioChunkRaw(
-        s.data,
-        'key',
-        (s.cts * 1e6) / s.timescale,
-        (s.duration * 1e6) / s.timescale,
-        first ? meta : undefined,
-      );
-      first = false;
-    }
-  }
-
   muxer.finalize();
   decoder.close();
   encoder.close();
