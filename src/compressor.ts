@@ -1,9 +1,11 @@
 // Engine orchestrator: pick WebCodecs (hardware) or ffmpeg.wasm (fallback) by
 // capability, run the compression, and handle fallback, single-threaded retry, and
-// cancellation. Both engines are imported dynamically, so neither is in the entry bundle.
+// cancellation. The ffmpeg engine loads dynamically and WebCodecs runs in a Worker, so neither
+// (nor mp4box) sits in the entry bundle or on the main thread.
 
 import { chooseCore } from './capabilities';
 import type { CompressOptions } from './options';
+import type { WorkerIn, WorkerOut } from './webcodecs-worker';
 
 export type EngineKind = 'webcodecs' | 'ffmpeg.wasm';
 export type EngineChoice = 'auto' | EngineKind;
@@ -50,6 +52,49 @@ export async function webCodecsSupported(): Promise<boolean> {
 
 const isAbort = (signal?: AbortSignal): boolean => signal?.aborted === true;
 
+/** Run the WebCodecs pipeline in a Worker; bridge its messages to the handlers (FR-P3). */
+function runWebCodecsWorker(
+  file: File,
+  options: CompressOptions,
+  handlers: CompressHandlers,
+): Promise<Uint8Array<ArrayBuffer>> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./webcodecs-worker.ts', import.meta.url), {
+      type: 'module',
+    });
+    const onAbort = (): void => worker.postMessage({ type: 'abort' } satisfies WorkerIn);
+    handlers.signal?.addEventListener('abort', onAbort, { once: true });
+    const finish = (): void => {
+      handlers.signal?.removeEventListener('abort', onAbort);
+      worker.terminate();
+    };
+    worker.addEventListener('message', (event: MessageEvent<WorkerOut>) => {
+      const msg = event.data;
+      switch (msg.type) {
+        case 'progress':
+          handlers.onProgress?.(msg.value);
+          break;
+        case 'log':
+          handlers.onLog?.(msg.line);
+          break;
+        case 'done':
+          finish();
+          resolve(new Uint8Array(msg.data));
+          break;
+        case 'error':
+          finish();
+          reject(new Error(msg.message));
+          break;
+      }
+    });
+    worker.addEventListener('error', (event) => {
+      finish();
+      reject(new Error(event.message || 'WebCodecs worker error'));
+    });
+    worker.postMessage({ type: 'start', file, options } satisfies WorkerIn);
+  });
+}
+
 export async function compress(
   file: File,
   options: CompressOptions,
@@ -60,8 +105,7 @@ export async function compress(
 
   if (chooseEngine(choice, await webCodecsSupported()) === 'webcodecs') {
     try {
-      const { compressWebCodecs } = await import('./webcodecs-pipeline');
-      const data = await compressWebCodecs(file, options, { onLog, onProgress, signal });
+      const data = await runWebCodecsWorker(file, options, handlers);
       return { data, engine: 'webcodecs' };
     } catch (err) {
       // A forced choice or a user cancellation must not silently fall back.
