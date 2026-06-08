@@ -2,8 +2,8 @@
 // (only after the user clicks Compress and accepts the size disclosure), so it is
 // code-split out of the initial bundle — nothing here loads on page load.
 
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { FFFSType, FFmpeg } from '@ffmpeg/ffmpeg';
+import { toBlobURL } from '@ffmpeg/util';
 import type { CoreKind } from './capabilities';
 import { type CompressOptions, qualityCrf } from './options';
 
@@ -48,9 +48,12 @@ export async function compress(
   file: File,
   opts: CompressOptions,
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const input = 'input';
+  const mountDir = '/input';
   const output = 'output.mp4';
-  await ffmpeg.writeFile(input, await fetchFile(file));
+  // Mount the input read-only (WORKERFS) so ffmpeg reads it on demand instead of copying the
+  // whole file into the WASM heap — keeps large inputs off the limited wasm memory (FR-V7).
+  await ffmpeg.createDir(mountDir);
+  await ffmpeg.mount(FFFSType.WORKERFS, { blobs: [{ name: 'source', data: file }] }, mountDir);
   // Target-size mode caps the bitrate; otherwise constant-quality (CRF).
   const rate = opts.videoBitrate
     ? [
@@ -62,30 +65,38 @@ export async function compress(
         String(opts.videoBitrate * 2),
       ]
     : ['-crf', String(qualityCrf(opts.quality))];
-  await ffmpeg.exec([
-    '-i',
-    input,
-    '-vf',
-    `scale=-2:${opts.height}`,
-    '-c:v',
-    'libx264',
-    '-preset',
-    FFMPEG_PRESET,
-    ...rate,
-    '-c:a',
-    'aac',
-    '-b:a',
-    '128k',
-    '-y',
-    output,
-  ]);
-  const data = await ffmpeg.readFile(output);
-  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
-  // Copy into a fresh (non-shared) ArrayBuffer so callers can build a Blob/object URL
-  // without SharedArrayBuffer typing friction from the multi-threaded core.
-  const result = new Uint8Array(bytes.byteLength);
-  result.set(bytes);
-  return result;
+  try {
+    await ffmpeg.exec([
+      '-i',
+      `${mountDir}/source`,
+      '-vf',
+      `scale=-2:${opts.height}`,
+      '-c:v',
+      'libx264',
+      '-preset',
+      FFMPEG_PRESET,
+      ...rate,
+      '-c:a',
+      'aac',
+      '-b:a',
+      '128k',
+      '-y',
+      output,
+    ]);
+    const data = await ffmpeg.readFile(output);
+    const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+    // Copy into a fresh (non-shared) ArrayBuffer so callers can build a Blob/object URL
+    // without SharedArrayBuffer typing friction from the multi-threaded core.
+    const result = new Uint8Array(bytes.byteLength);
+    result.set(bytes);
+    return result;
+  } finally {
+    try {
+      await ffmpeg.unmount(mountDir);
+    } catch {
+      // the worker may already be gone (e.g. cancelled) — nothing to clean up
+    }
+  }
 }
 
 export interface FfmpegRunHandlers {

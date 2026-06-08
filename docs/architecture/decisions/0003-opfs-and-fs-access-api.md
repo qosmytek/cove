@@ -15,6 +15,9 @@ output.
 ## Consequences
 - ✅ No upload; bytes stay local. Save-in-place UX on supported browsers.
 - ✅ OPFS scratch handles large files far better than in-memory buffers.
+- ⚠️ The stock `@ffmpeg/core` exposes no OPFS mount, so the `ffmpeg.wasm` path uses **WORKERFS**
+  (read-only input mount) to keep large inputs off the WASM heap; true OPFS scratch there would need a
+  custom core (deferred). The WebCodecs path streams instead, so it needs no OPFS.
 - ⚠️ FS Access API support varies → the fallback path is required (and must be tested).
 - 🔗 Detailed in [Data Flow](../data-flow.md); realized by
   [Local-First Core](../../features/01-local-first-core.md).

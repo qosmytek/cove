@@ -90,7 +90,7 @@ See [Personas](./personas.md). v1 optimizes for **Priya** (privacy-conscious pro
 - **FR-V6** Load the compute engine only when the user starts a compression. The `ffmpeg.wasm` fallback
   is a large download, so disclose its size first; the WebCodecs path uses built-in OS codecs (no large
   download).
-- **FR-V7** Handle large files without exhausting memory (OPFS scratch for the `ffmpeg.wasm` path;
+- **FR-V7** Handle large files without exhausting memory (the `ffmpeg.wasm` path mounts its input read-only via WORKERFS, since the stock core has no OPFS mount — true OPFS scratch is deferred;
   chunked/streamed decode→encode for the WebCodecs path) and fail gracefully with a clear message when
   the device can't.
 - **FR-V8** Select the engine by **capability detection** — prefer the WebCodecs hardware path; fall

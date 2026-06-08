@@ -56,7 +56,7 @@ Ratified 2026-06-07 from the
   covers run-to-run / GC variance and device differences, and stays well clear of the pre-fix ~595 MB
   regression). `performance.memory` is a coarse JS-heap proxy, so the **binding check is no-OOM on the
   [A54](../engineering/testing-strategy.md#device--browser-matrix)**. Peak scales as **≈ input size + a
-  bounded (~150 MB) pipeline**, because the input is held whole until **Stage 4** streams it from OPFS —
+  bounded (~150 MB) pipeline**, because the input is held whole until **Stage 4** streams it (range reads from the `File`; no OPFS) —
   very large inputs will exceed this until then. Changing this number requires an
   [ADR](../architecture/decisions/README.md).
 
