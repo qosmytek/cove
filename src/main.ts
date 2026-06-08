@@ -1,5 +1,6 @@
-// Shell: capability detection + UI wiring. Compression is delegated to the engine
-// orchestrator (compressor.ts), which auto-selects WebCodecs or ffmpeg.wasm.
+// Shell: drop-zone UI + capability detection. Compression is delegated to the engine
+// orchestrator (compressor.ts), which auto-selects WebCodecs or ffmpeg.wasm. Diagnostics
+// (capabilities, engine override, log) live behind the Details disclosure.
 
 import { CORE_APPROX_MB, chooseCore, detectCapabilities } from './capabilities';
 import { compress, type EngineChoice } from './compressor';
@@ -20,18 +21,23 @@ const byId = <T extends HTMLElement>(id: string): T => {
   return el as T;
 };
 
-const statusEl = byId<HTMLParagraphElement>('status');
+const dropzone = byId<HTMLButtonElement>('dropzone');
 const fileInput = byId<HTMLInputElement>('file');
-const compressBtn = byId<HTMLButtonElement>('compress');
-const cancelBtn = byId<HTMLButtonElement>('cancel');
-const progressEl = byId<HTMLProgressElement>('progress');
-const logEl = byId<HTMLPreElement>('log');
-const resultEl = byId<HTMLDivElement>('result');
-const engineSel = byId<HTMLSelectElement>('engine');
+const panel = byId<HTMLElement>('panel');
+const fileinfo = byId<HTMLParagraphElement>('fileinfo');
 const qualitySel = byId<HTMLSelectElement>('quality');
 const targetInput = byId<HTMLInputElement>('target');
 const heightSel = byId<HTMLSelectElement>('height');
+const compressBtn = byId<HTMLButtonElement>('compress');
+const cancelBtn = byId<HTMLButtonElement>('cancel');
+const progressEl = byId<HTMLProgressElement>('progress');
+const statusMsg = byId<HTMLParagraphElement>('status-msg');
+const resultEl = byId<HTMLDivElement>('result');
+// Diagnostics (inside the Details disclosure).
+const statusEl = byId<HTMLParagraphElement>('status');
+const engineSel = byId<HTMLSelectElement>('engine');
 const webcodecsEl = byId<HTMLDivElement>('webcodecs');
+const logEl = byId<HTMLPreElement>('log');
 
 const caps = detectCapabilities();
 statusEl.textContent =
@@ -75,32 +81,69 @@ function log(line: string): void {
   logEl.scrollTop = logEl.scrollHeight;
 }
 
-// Read the clip's duration (for target-size estimation) without decoding it.
-function probeDuration(file: File): Promise<number> {
+function formatDuration(sec: number): string {
+  if (!sec || !Number.isFinite(sec)) return '—';
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// Read duration + dimensions without decoding the whole clip.
+function probeMeta(file: File): Promise<{ duration: number; width: number; height: number }> {
   return new Promise((resolve) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
     const url = URL.createObjectURL(file);
-    const done = (d: number): void => {
+    const done = (duration: number, width: number, height: number): void => {
       URL.revokeObjectURL(url);
-      resolve(Number.isFinite(d) ? d : 0);
+      resolve({ duration: Number.isFinite(duration) ? duration : 0, width, height });
     };
-    video.onloadedmetadata = () => done(video.duration);
-    video.onerror = () => done(0);
+    video.onloadedmetadata = () => done(video.duration, video.videoWidth, video.videoHeight);
+    video.onerror = () => done(0, 0, 0);
     video.src = url;
   });
 }
 
-fileInput.addEventListener('change', () => {
-  selectedFile = fileInput.files?.[0] ?? null;
-  compressBtn.disabled = !selectedFile;
-  resultEl.textContent = '';
+async function selectFile(file: File): Promise<void> {
+  selectedFile = file;
   durationSec = 0;
-  if (selectedFile) {
-    void probeDuration(selectedFile).then((d) => {
-      durationSec = d;
-    });
-  }
+  resultEl.replaceChildren();
+  statusMsg.textContent = '';
+  progressEl.hidden = true;
+  panel.hidden = false;
+  compressBtn.disabled = false;
+  fileinfo.textContent = `${file.name} · ${formatBytes(file.size)}`;
+
+  const meta = await probeMeta(file);
+  durationSec = meta.duration;
+  const dims = meta.width && meta.height ? `${meta.width}×${meta.height}` : null;
+  fileinfo.textContent = [file.name, dims, formatDuration(meta.duration), formatBytes(file.size)]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+dropzone.addEventListener('click', () => {
+  fileInput.value = ''; // allow re-choosing the same file
+  fileInput.click();
+});
+dropzone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropzone.classList.add('dragover');
+});
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) void selectFile(file);
+});
+// A drop outside the zone must not navigate the page away.
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => e.preventDefault());
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files?.[0];
+  if (file) void selectFile(file);
 });
 
 compressBtn.addEventListener('click', async () => {
@@ -108,7 +151,7 @@ compressBtn.addEventListener('click', async () => {
   const file = selectedFile;
   const choice = engineSel.value as EngineChoice;
   const targetMB = Number(targetInput.value);
-  if (targetMB > 0 && durationSec <= 0) durationSec = await probeDuration(file);
+  if (targetMB > 0 && durationSec <= 0) durationSec = (await probeMeta(file)).duration;
   const videoBitrate = targetBitrate(targetMB, durationSec);
   if (targetMB > 0 && videoBitrate <= 0) {
     log("Couldn't read the clip's duration; using the quality preset instead.");
@@ -121,8 +164,10 @@ compressBtn.addEventListener('click', async () => {
 
   controller = new AbortController();
   compressBtn.disabled = true;
-  cancelBtn.disabled = false;
+  cancelBtn.hidden = false;
+  progressEl.hidden = false;
   progressEl.value = 0;
+  statusMsg.textContent = 'Compressing…';
   const t0 = performance.now();
   const modeLabel = options.videoBitrate
     ? `target ${targetMB} MB (~${Math.round(options.videoBitrate / 1000)} kbps)`
@@ -164,18 +209,23 @@ compressBtn.addEventListener('click', async () => {
     const suggestedName = `compressed-${file.name.replace(/\.[^.]+$/, '')}.mp4`;
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
+    saveBtn.className = 'primary';
     saveBtn.textContent = `${canSaveInPlace() ? 'Save' : 'Download'} result (${formatBytes(metrics.outputBytes)})`;
     saveBtn.addEventListener('click', async () => {
       try {
         const result = await saveOutput(data, suggestedName);
-        if (result === 'saved') log(`Saved ${suggestedName}.`);
-        else if (result === 'downloaded') log(`Downloaded ${suggestedName}.`);
+        if (result === 'saved') statusMsg.textContent = `Saved ${suggestedName}.`;
+        else if (result === 'downloaded') statusMsg.textContent = `Downloaded ${suggestedName}.`;
       } catch (e) {
-        log(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
+        statusMsg.textContent = `Save failed: ${e instanceof Error ? e.message : String(e)}`;
       }
     });
     resultEl.replaceChildren(saveBtn);
+    saveBtn.focus();
 
+    statusMsg.textContent =
+      `Done · ${formatBytes(metrics.inputBytes)} → ${formatBytes(metrics.outputBytes)} ` +
+      `(${metrics.reductionPct}% smaller) in ${(elapsedMs / 1000).toFixed(1)}s`;
     log(
       `Done [${engine}] · ${(elapsedMs / 1000).toFixed(1)}s · ${formatBytes(metrics.inputBytes)} → ` +
         `${formatBytes(metrics.outputBytes)} (${metrics.reductionPct}% smaller)` +
@@ -183,18 +233,22 @@ compressBtn.addEventListener('click', async () => {
     );
     console.table(metrics);
   } catch (err) {
-    if (controller.signal.aborted) log('Cancelled.');
-    else log(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    const msg = controller.signal.aborted
+      ? 'Cancelled.'
+      : `Error: ${err instanceof Error ? err.message : String(err)}`;
+    statusMsg.textContent = msg;
+    log(msg);
   } finally {
+    progressEl.hidden = true;
     progressEl.value = 0;
     compressBtn.disabled = false;
-    cancelBtn.disabled = true;
+    cancelBtn.hidden = true;
     controller = null;
   }
 });
 
 cancelBtn.addEventListener('click', () => {
   controller?.abort();
-  cancelBtn.disabled = true;
-  log('Cancelling…');
+  cancelBtn.hidden = true;
+  statusMsg.textContent = 'Cancelling…';
 });
