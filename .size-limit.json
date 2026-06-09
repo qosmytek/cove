@@ -1,12 +1,17 @@
 [
   {
-    "name": "initial JS (entry chunk)",
-    "path": "dist/assets/index-*.js",
+    "name": "initial JS (entry + default tool)",
+    "path": ["dist/assets/index-*.js", "dist/assets/compress-*.js"],
     "limit": "150 kB"
   },
   {
-    "name": "initial transfer (html + entry JS + CSS)",
-    "path": ["dist/index.html", "dist/assets/index-*.js", "dist/assets/*.css"],
+    "name": "initial transfer (html + entry + default tool + CSS)",
+    "path": [
+      "dist/index.html",
+      "dist/assets/index-*.js",
+      "dist/assets/compress-*.js",
+      "dist/assets/*.css"
+    ],
     "limit": "250 kB"
   }
 ]

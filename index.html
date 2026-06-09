@@ -96,55 +96,7 @@
       <button id="cmdk" class="cmdk" type="button" aria-keyshortcuts="Meta+K Control+K">
         ⌘K Commands
       </button>
-
-      <button id="dropzone" type="button" class="dropzone">
-        <span class="dz-icon" aria-hidden="true">⬇</span>
-        <span>Drop a video here<br /><span class="dz-sub">or click to choose</span></span>
-      </button>
-      <input id="file" type="file" accept="video/*" aria-label="Video file" hidden />
-      <p id="capability" class="capability"></p>
-
-      <section id="panel" aria-label="Compression settings" hidden>
-        <p id="fileinfo" class="fileinfo"></p>
-        <div class="settings">
-          <label>Quality <select id="quality"></select></label>
-          <label
-            >Resolution
-            <select id="height">
-              <option value="480">480p</option>
-              <option value="720">720p</option>
-              <option value="1080">1080p</option>
-            </select>
-          </label>
-          <label
-            >Target size
-            <span><input id="target" type="number" min="0" step="1" placeholder="—" /> MB</span>
-          </label>
-        </div>
-        <div class="actions">
-          <button id="compress" class="primary" type="button">Compress</button>
-          <button id="cancel" type="button" hidden>Cancel</button>
-        </div>
-      </section>
-
-      <progress id="progress" max="1" value="0" aria-label="Compression progress" hidden></progress>
-      <p id="status-msg" class="status-msg" role="status" aria-live="polite"></p>
-      <div id="result"></div>
-
-      <details id="details">
-        <summary>Details</summary>
-        <p id="status">Detecting capabilities…</p>
-        <label
-          >Engine
-          <select id="engine">
-            <option value="auto">Auto</option>
-            <option value="ffmpeg.wasm">ffmpeg.wasm</option>
-            <option value="webcodecs">WebCodecs (hardware)</option>
-          </select>
-        </label>
-        <div id="webcodecs"></div>
-        <pre id="log"></pre>
-      </details>
+      <div id="tool-host"></div>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
