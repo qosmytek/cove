@@ -15,8 +15,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # npm may skip esbuild's postinstall; ensure its binary is present.
-      - run: node node_modules/esbuild/install.js
       - run: npm run check # Biome lint + format
       - run: npm run typecheck
       - run: npm test # Vitest unit/integration
