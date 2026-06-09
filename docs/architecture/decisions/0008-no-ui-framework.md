@@ -19,5 +19,5 @@ Phase 2).
 - ✅ Direct control over semantic HTML + ARIA — no framework a11y quirks to work around.
 - ✅ Continues the working Phase 0 spike; no migration.
 - ⚠️ More manual DOM wiring; keep any state/templating helpers tiny and dependency-free.
-- ⚠️ Revisit when a shared multi-tool shell arrives ([Roadmap](../../product/roadmap.md), Phase 2).
+- ✅ **Phase-2 revisit (2026-06-09):** the shared multi-tool shell ([Roadmap](../../product/roadmap.md), Phase 2) landed framework-free — a tool contract + host under `src/shell/` — with the entry chunk at ~5 kB, well within [budget](../../quality/performance-budget.md). Decision **affirmed**; no framework introduced.
 - 🔗 Realized by the v1 compressor UI; serves [Accessibility](../../quality/accessibility.md) and the perf budget.

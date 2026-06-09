@@ -1,6 +1,6 @@
 # 08 · Command Palette
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-09 · **Owner:** Victor Senna Seleimend
 > **Section:** [Features](./README.md) · **In v1:** ✅ (should)
 > ← [Feature index](./README.md)
 
@@ -42,5 +42,5 @@ through the standard UI.
 [Accessibility](../quality/accessibility.md) ·
 [Progressive Enhancement](../quality/progressive-enhancement.md).
 
-## Open questions
-- Final default shortcut(s), and how we surface them on first run?
+## Resolved
+- **Shortcut + surfacing (v1):** **⌘K / Ctrl-K**, with a visible "⌘K Commands" button in the header as the discoverable affordance (`aria-keyshortcuts` set for assistive tech).

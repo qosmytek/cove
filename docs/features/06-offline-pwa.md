@@ -1,6 +1,6 @@
 # 06 · Offline-First PWA
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-09 · **Owner:** Victor Senna Seleimend
 > **Section:** [Features](./README.md) · **In v1:** ✅
 > ← [Feature index](./README.md)
 
@@ -40,5 +40,5 @@ ordinary tab when not installed. No feature depends on being installed.
 ## Dependencies
 [Offline Strategy](../quality/offline-strategy.md) · [Local-First Core](./01-local-first-core.md).
 
-## Open questions
-- Update UX: silent on next launch, or a "refresh to update" prompt?
+## Resolved
+- **Update UX (v1):** **silent** — the updated shell is picked up on the next launch (no "refresh to update" prompt), keeping the experience calm; cache versioning + clean activation guard against staleness (risk R6).

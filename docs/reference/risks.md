@@ -1,6 +1,6 @@
 # Risk Register
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-09 · **Owner:** Victor Senna Seleimend
 > **Section:** [Reference](./) · ← [Documentation Index](../README.md)
 
 Top risks, their impact, and how we mitigate them. The biggest by far is **payload weight**.
@@ -62,3 +62,8 @@ Likelihood × Impact (each Low / Med / High). Owner: Victor Senna Seleimend; rev
 ## Review
 Revisit this register at each [phase](../product/roadmap.md) boundary, and whenever a new capability is
 added.
+
+**Phase 1 → 2 boundary (2026-06-09):** R2 resolved in Phase 0 (WebCodecs fast path). R3 (capability
+fragmentation) and R4 (cross-origin isolation) are the focus of Phase 2's shell capability layer; R6
+(SW staleness) is mitigated in v1 via silent, versioned updates. R1 (payload weight) remains the top
+watch for the Phase 2 single-file build.
