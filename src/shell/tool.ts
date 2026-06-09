@@ -4,6 +4,12 @@
 import type { Capabilities } from '../capabilities';
 import type { Command } from '../palette';
 
+export interface CapabilityNotice {
+  /** 'info' = all good (e.g. the fast path); 'warn' = a working but degraded fallback. */
+  level: 'info' | 'warn';
+  text: string;
+}
+
 export interface ToolContext {
   /** The element the tool renders into. Cleared by the shell between mounts. */
   host: HTMLElement;
@@ -11,6 +17,8 @@ export interface ToolContext {
   caps: Capabilities;
   /** Contribute commands to the shell's global ⌘K palette (dropped on unmount). */
   registerCommands(commands: Command[]): void;
+  /** Show a capability/fallback notice in the shell's notice region; null clears it. */
+  setCapabilityNotice(notice: CapabilityNotice | null): void;
 }
 
 export interface ToolModule {

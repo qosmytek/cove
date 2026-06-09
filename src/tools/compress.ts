@@ -24,7 +24,6 @@ const TEMPLATE = `
     <span>Drop a video here<br /><span class="dz-sub">or click to choose</span></span>
   </button>
   <input id="file" type="file" accept="video/*" aria-label="Video file" hidden />
-  <p id="capability" class="capability"></p>
 
   <section id="panel" aria-label="Compression settings" hidden>
     <p id="fileinfo" class="fileinfo"></p>
@@ -103,16 +102,26 @@ export function mount(ctx: ToolContext): () => void {
   const webcodecsEl = byId<HTMLDivElement>('webcodecs');
   const logEl = byId<HTMLPreElement>('log');
   const detailsEl = byId<HTMLDetailsElement>('details');
-  const capabilityEl = byId<HTMLParagraphElement>('capability');
 
   statusEl.textContent =
     `crossOriginIsolated: ${caps.crossOriginIsolated} · SharedArrayBuffer: ${caps.sharedArrayBuffer} · ` +
+    `WebCodecs: ${caps.webCodecs} · ` +
     `ffmpeg fallback core: ${chooseCore(caps) === 'mt' ? 'multi-threaded' : 'single-threaded'}`;
 
-  // User-facing note on which compression path this browser will use (FR-P7).
-  void webCodecsSupported().then((ok) => {
-    capabilityEl.textContent = capabilityNote(ok, caps.crossOriginIsolated);
+  // Capability/fallback note (FR-P7), rendered in the shell's notice region. Sync first paint
+  // from the detected platform caps, refined by the hardware H.264 probe when WebCodecs exists.
+  ctx.setCapabilityNotice({
+    level: caps.webCodecs ? 'info' : 'warn',
+    text: capabilityNote(caps.webCodecs, caps.crossOriginIsolated),
   });
+  if (caps.webCodecs) {
+    void webCodecsSupported().then((ok) => {
+      ctx.setCapabilityNotice({
+        level: ok ? 'info' : 'warn',
+        text: capabilityNote(ok, caps.crossOriginIsolated),
+      });
+    });
+  }
 
   // Seed the controls from the defaults (single source of truth in options.ts).
   for (const q of QUALITIES) {
@@ -406,6 +415,7 @@ export function mount(ctx: ToolContext): () => void {
 
   return () => {
     controller?.abort();
+    ctx.setCapabilityNotice(null);
     window.removeEventListener('dragover', onWindowDragOver);
     window.removeEventListener('drop', onWindowDrop);
   };
