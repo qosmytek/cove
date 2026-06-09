@@ -80,6 +80,10 @@ an internal "how to add a tool" guide.
 the [encrypted vault](../features/03-encrypted-vault.md) for any data-keeping tool — with a clear
 recovery story, or a deliberate and well-communicated absence of one.
 
+## Post-Phase-4 — backlog
+Understood-but-unscheduled work — large-output handling (WebCodecs output streaming, a custom OPFS
+ffmpeg core) and WebCodecs audio decode/re-encode — is tracked in the [Backlog](./backlog.md).
+
 ## Continuous (every phase)
 - Hold the [performance budget](../quality/performance-budget.md), enforced in [CI](../engineering/ci-cd.md).
 - Maintain [accessibility](../quality/accessibility.md) and
