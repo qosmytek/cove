@@ -81,6 +81,15 @@ rasterize-and-rebuild with `pdf.js` + `pdf-lib` (permissive licenses; MuPDF's AG
 redacted pages rasterized, output rebuilt fresh, and the single-file engine **inlined**. A
 riskiest-first spike validates true removal before UI, mirroring Phase 0.
 
+## Build status (2026-06-10)
+v1 ships behind the [tool contract](../engineering/adding-a-tool.md): `pdf.js` rendering, drag-to-mark
+regions plus a keyboard “Redact entire page” toggle, the DOM-free rebuild core (`src/redaction.ts`,
+unit-tested for RD-2/RD-6), File System Access save (RD-5), and ⌘K navigation between tools. CI-green
+(core test + typecheck + build + size; the heavy `pdf.js` bundle is lazy and excluded from the precache).
+**Pending:** real-browser / e2e verification of the marking interaction; precise keyboard region
+selection (RD-1 is whole-page-only by keyboard today); and bundling `pdf.js` standard fonts for render
+fidelity.
+
 ## Open questions
 - **Text-preserving redaction** (keep a searchable layer on redacted pages) — revisit MuPDF-WASM *iff*
   licensing clears, or a permissive content-aware path matures.
