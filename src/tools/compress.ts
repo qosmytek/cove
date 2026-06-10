@@ -4,6 +4,7 @@
 // ffmpeg.wasm; diagnostics live behind the Details disclosure.
 import { CORE_APPROX_MB, chooseCore } from '../capabilities';
 import { compress, type EngineChoice, webCodecsSupported } from '../compressor';
+import { formatDiagnostics } from '../diagnostics';
 import { capabilityNote, friendlyError } from '../errors';
 import { type CompressMetrics, formatBytes, heapMB, reductionPct } from '../measure';
 import {
@@ -65,6 +66,7 @@ const TEMPLATE = `
     </label>
     <div id="webcodecs"></div>
     <pre id="log"></pre>
+    <button id="copy-diag" type="button">Copy diagnostics</button>
   </details>
 `;
 
@@ -102,6 +104,7 @@ export function mount(ctx: ToolContext): () => void {
   const webcodecsEl = byId<HTMLDivElement>('webcodecs');
   const logEl = byId<HTMLPreElement>('log');
   const detailsEl = byId<HTMLDetailsElement>('details');
+  const copyDiagBtn = byId<HTMLButtonElement>('copy-diag');
 
   statusEl.textContent =
     `crossOriginIsolated: ${caps.crossOriginIsolated} · SharedArrayBuffer: ${caps.sharedArrayBuffer} · ` +
@@ -332,6 +335,30 @@ export function mount(ctx: ToolContext): () => void {
     statusMsg.textContent = 'Cancelling…';
   });
 
+  // Telemetry-free quality monitoring (FR-P7): a copyable, on-device report for voluntary bug
+  // reports. Nothing is transmitted — the user reviews it and chooses where to paste it.
+  let copyResetTimer: number | undefined;
+  const copyDiagnostics = async (): Promise<void> => {
+    const report = formatDiagnostics({
+      userAgent: navigator.userAgent,
+      caps,
+      details: { 'engine (selected)': engineSel.value },
+      log: logEl.textContent ?? '',
+    });
+    try {
+      await navigator.clipboard.writeText(report);
+      copyDiagBtn.textContent = 'Copied ✓';
+      clearTimeout(copyResetTimer);
+      copyResetTimer = window.setTimeout(() => {
+        copyDiagBtn.textContent = 'Copy diagnostics';
+      }, 1500);
+    } catch {
+      // Clipboard unavailable (e.g. an insecure context) — drop it in the log to copy by hand.
+      log(report);
+    }
+  };
+  copyDiagBtn.addEventListener('click', () => void copyDiagnostics());
+
   // Contribute to the shell's ⌘K palette (FR-P10). Each command drives the same control as
   // the UI, so the two never drift.
   const commands: Command[] = [
@@ -410,11 +437,18 @@ export function mount(ctx: ToolContext): () => void {
         detailsEl.open = !detailsEl.open;
       },
     },
+    {
+      id: 'copy-diag',
+      title: 'Copy diagnostics',
+      aliases: ['report', 'bug', 'log'],
+      run: () => copyDiagBtn.click(),
+    },
   ];
   ctx.registerCommands(commands);
 
   return () => {
     controller?.abort();
+    clearTimeout(copyResetTimer);
     ctx.setCapabilityNotice(null);
     window.removeEventListener('dragover', onWindowDragOver);
     window.removeEventListener('drop', onWindowDrop);
