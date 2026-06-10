@@ -35,7 +35,10 @@ export default defineConfig({
       pwaAssets: { config: true, overrideManifestIcons: true },
       injectManifest: {
         // Precache the light shell only; the heavy ffmpeg cores are cached on first use (sw.ts).
-        globPatterns: ['**/*.{html,css,js,svg,webmanifest}'],
+        // The web manifest is precached by the plugin itself; don't also glob it, or the
+        // pwaAssets icon-injection produces a second entry with a different revision and
+        // workbox throws add-to-cache-list-conflicting-entries (SW registration then fails).
+        globPatterns: ['**/*.{html,css,js,svg}'],
         globIgnores: ['ffmpeg/**'],
       },
       devOptions: { enabled: false },

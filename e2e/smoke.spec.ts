@@ -29,3 +29,15 @@ test('a11y: no critical axe violations on the shell', async ({ page }) => {
   const critical = violations.filter((v) => v.impact === 'critical');
   expect(critical, JSON.stringify(critical.map((v) => v.id))).toEqual([]);
 });
+
+test('the service worker registers and activates (no precache conflict)', async ({ page }) => {
+  await page.goto('/');
+  // The production preview serves sw.js. A precache conflict (e.g. a duplicate manifest entry)
+  // makes the SW script throw on evaluation, so it never activates — this wait then times out,
+  // catching the regression.
+  await page.waitForFunction(
+    async () => Boolean((await navigator.serviceWorker.getRegistration())?.active),
+    null,
+    { timeout: 15000 },
+  );
+});
