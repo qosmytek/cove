@@ -1,6 +1,6 @@
 # Risk Register
 
-> **Status:** Draft · **Last updated:** 2026-06-09 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-10 · **Owner:** Victor Senna Seleimend
 > **Section:** [Reference](./) · ← [Documentation Index](../README.md)
 
 Top risks, their impact, and how we mitigate them. The biggest by far is **payload weight**.
@@ -59,6 +59,16 @@ Likelihood × Impact (each Low / Med / High). Owner: Victor Senna Seleimend; rev
 - **Impact:** Med — crashes or failures on big inputs.
 - **Mitigation:** stream / scratch via OPFS; push-down filters for data; honest limits and clear errors.
 
+### R10 — Incomplete redaction (recoverable content) 🟠 *(enters Phase 3)*
+- **Impact:** High — a redactor that leaves blacked-out text selectable or images embedded is a privacy
+  failure and destroys trust; worst case for [Dr. Lee](../product/personas.md)'s compliance use.
+- **Likelihood:** Med without discipline — it is the most common PDF-redaction bug.
+- **Mitigation:** **rasterize-and-rebuild** so removal is provable by construction — redacted pages
+  become flattened images and the output is rebuilt fresh (dropping history, scripts, and attachments);
+  strip metadata by default, and **assert in tests** that no marked text survives
+  ([ADR-0010](../architecture/decisions/0010-pdf-redaction-engine.md) /
+  [PDF Redactor](../features/09-pdf-redactor.md)).
+
 ## Review
 Revisit this register at each [phase](../product/roadmap.md) boundary, and whenever a new capability is
 added.
@@ -67,3 +77,11 @@ added.
 fragmentation) and R4 (cross-origin isolation) are the focus of Phase 2's shell capability layer; R6
 (SW staleness) is mitigated in v1 via silent, versioned updates. R1 (payload weight) remains the top
 watch for the Phase 2 single-file build.
+
+**Phase 2 → 3 boundary (2026-06-10):** R3 and R4 are now **actively mitigated by shipped code** — the
+shell's capability-detection service plus a shared fallback-notice region landed in Phase 2. R6 saw a
+real event: a service-worker precache regression was caught, fixed, and **guarded with an e2e
+SW-registration assertion**. R1 stays the top watch as Phase 3 opens: the **PDF redactor** is the lead
+tool partly *because* its engine is lighter than ffmpeg, and it becomes the first
+[single-file](../features/02-single-file-app.md) `file://` target (R1 + R4). New for Phase 3: **R10**
+(incomplete redaction), above.
