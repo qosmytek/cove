@@ -4,6 +4,7 @@
 // ever see a ToolContext (see ./tool) — they never touch the shell or the rest of the page.
 import { detectCapabilities } from '../capabilities';
 import { type Command, createPalette } from '../palette';
+import { tools } from './registry';
 import { onRouteChange, resolveTool } from './router';
 import type { CapabilityNotice } from './tool';
 
@@ -42,6 +43,19 @@ export async function startShell(): Promise<void> {
     setCapabilityNotice(null); // and its capability notice
     host.replaceChildren();
     const tool = resolveTool();
+    // Shell-level navigation: every other tool is one ⌘K command away (the calm alternative to
+    // nav chrome). Re-added each mount, since the command list is cleared above.
+    for (const other of tools) {
+      if (other.route === tool.route) continue;
+      commands.push({
+        id: `goto-${other.id}`,
+        title: `Open ${other.title}`,
+        aliases: ['switch', 'tool', other.id],
+        run: () => {
+          location.hash = `#/${other.route}`;
+        },
+      });
+    }
     const mod = await tool.load();
     cleanup = mod.mount({
       host,
