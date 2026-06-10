@@ -1,6 +1,6 @@
 # 07 · Calm by Design
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-09 · **Owner:** Victor Senna Seleimend
 > **Section:** [Features](./README.md) · **In v1:** ✅
 > ← [Feature index](./README.md)
 
@@ -51,5 +51,8 @@ where they aren't (CD-5). See [Progressive Enhancement](../quality/progressive-e
 [Accessibility](../quality/accessibility.md) (overlapping concerns) ·
 [Privacy & Security](../quality/privacy-security.md).
 
-## Open questions
-- Do we want privacy-preserving, **local-only** usage counters (never transmitted), or nothing at all?
+## Resolved
+- **Quality monitoring (v1):** no telemetry **and no local usage counters** — quality feedback rides
+  on a voluntary, on-device "Copy diagnostics" report (capabilities + log) that the user chooses to
+  share. See [Adding a Tool](../engineering/adding-a-tool.md) and
+  [ADR-0005](../architecture/decisions/0005-no-server-no-account.md).

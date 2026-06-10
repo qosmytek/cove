@@ -80,6 +80,7 @@ The constraints every feature must satisfy.
 
 | Document | Purpose |
 | -------- | ------- |
+| [Adding a Tool](engineering/adding-a-tool.md) | The shell/tool contract and the recipe for a new tool. |
 | [Testing Strategy](engineering/testing-strategy.md) | What we test, where, and on what hardware. |
 | [CI/CD](engineering/ci-cd.md) | The pipeline, gates, and release flow. |
 | [Phase 0 Measurement](engineering/phase-0-measurement.md) | Running the prototype and measuring it on the reference device. |
