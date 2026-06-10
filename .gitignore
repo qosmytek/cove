@@ -26,6 +26,9 @@ playwright-report/
 test-results/
 .nyc_output/
 
+# --- Spikes / prototypes (local only; deps installed with `npm i --no-save`) ---
+spike/
+
 # --- Logs ---
 logs/
 *.log

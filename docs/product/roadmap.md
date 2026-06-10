@@ -80,6 +80,11 @@ where a lighter tool is a better first single-file target than the compressor.
 **Lead tool — decided (2026-06-10): the [PDF redactor](../features/09-pdf-redactor.md)** ("Cove
 Redact") — high privacy resonance, lighter WASM than the compressor, and the first
 [single-file](../features/02-single-file-app.md) build target (unblocking the deferred ADR-0004 work).
+**Spike (2026-06-10): PASS** — a headless
+[rasterize-and-rebuild spike](../engineering/phase-3-redaction-spike.md) proved redacted content is
+unrecoverable (no text/vector/image survives), untouched pages keep their text, and source metadata is
+dropped — validating [ADR-0010](../architecture/decisions/0010-pdf-redaction-engine.md) before UI.
+Next: build `src/tools/redact.ts` with the security check as a permanent test.
 **Then (prioritize by validated demand):**
 - **CSV ↔ JSON ↔ Parquet converter** ("Cove Convert") → opens the door to
   [big-data exploration](../features/05-big-data-exploration.md) (DuckDB-WASM).
