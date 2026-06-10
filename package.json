@@ -29,7 +29,9 @@
     "@ffmpeg/ffmpeg": "^0.12.10",
     "@ffmpeg/util": "^0.12.1",
     "mp4-muxer": "^5.2.2",
-    "mp4box": "^2.3.0"
+    "mp4box": "^2.3.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.0.227"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",

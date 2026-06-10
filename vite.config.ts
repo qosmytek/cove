@@ -34,12 +34,14 @@ export default defineConfig({
       // Generate the PNG/maskable/apple-touch icon set from public/icon.svg (pwa-assets.config.ts).
       pwaAssets: { config: true, overrideManifestIcons: true },
       injectManifest: {
-        // Precache the light shell only; the heavy ffmpeg cores are cached on first use (sw.ts).
+        // Precache the light shell only; heavy engines are cached on first use (sw.ts) — the
+        // ffmpeg cores (public/ffmpeg) and the redactor's pdf.js bundle (redact-*.js; its .mjs
+        // worker already falls outside globPatterns). Keeps every visitor's install small (R1).
         // The web manifest is precached by the plugin itself; don't also glob it, or the
         // pwaAssets icon-injection produces a second entry with a different revision and
         // workbox throws add-to-cache-list-conflicting-entries (SW registration then fails).
         globPatterns: ['**/*.{html,css,js,svg}'],
-        globIgnores: ['ffmpeg/**'],
+        globIgnores: ['ffmpeg/**', 'assets/redact-*.js'],
       },
       devOptions: { enabled: false },
     }),

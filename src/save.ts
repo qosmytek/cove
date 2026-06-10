@@ -23,17 +23,28 @@ export function canSaveInPlace(): boolean {
  * location and saves in place); falls back to a download if it's unavailable or fails.
  * Returns 'cancelled' if the user dismisses the save dialog.
  */
+export interface SaveFormat {
+  /** MIME type for the Blob and the save-picker filter (default 'video/mp4'). */
+  mimeType?: string;
+  /** Human label shown in the save picker (default 'MP4 video'). */
+  description?: string;
+  /** Allowed extensions for the save picker (default ['.mp4']). */
+  extensions?: string[];
+}
+
 export async function saveOutput(
   data: Uint8Array<ArrayBuffer>,
   suggestedName: string,
+  format: SaveFormat = {},
 ): Promise<SaveResult> {
-  const blob = new Blob([data], { type: 'video/mp4' });
+  const { mimeType = 'video/mp4', description = 'MP4 video', extensions = ['.mp4'] } = format;
+  const blob = new Blob([data], { type: mimeType });
 
   if (typeof window !== 'undefined' && window.showSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({
         suggestedName,
-        types: [{ description: 'MP4 video', accept: { 'video/mp4': ['.mp4'] } }],
+        types: [{ description, accept: { [mimeType]: extensions } }],
       });
       const writable = await handle.createWritable();
       await writable.write(blob);

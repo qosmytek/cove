@@ -88,6 +88,17 @@
       .palette-list { list-style: none; margin: 0; padding: 0.3rem; max-height: 50vh; overflow: auto; }
       .palette-option { padding: 0.5rem 0.75rem; border-radius: 7px; cursor: pointer; }
       .palette-option.active { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+      /* Cove Redact */
+      .pages { display: grid; gap: 1rem; margin: 1.25rem 0; }
+      .page { margin: 0; }
+      .page-wrap { position: relative; line-height: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+      .page-wrap canvas { display: block; width: 100%; height: auto; }
+      .page-marks { position: absolute; inset: 0; cursor: crosshair; touch-action: none; }
+      .page-marks.whole { background: #000; }
+      .mark { position: absolute; background: #000; }
+      .mark:not(.preview) { cursor: pointer; }
+      .mark.preview { background: #0008; outline: 1px solid #fff8; }
+      .page-tools { display: flex; align-items: center; gap: 0.4rem; margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--muted); }
     </style>
   </head>
   <body>

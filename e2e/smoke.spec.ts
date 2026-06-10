@@ -41,3 +41,18 @@ test('the service worker registers and activates (no precache conflict)', async 
     { timeout: 15000 },
   );
 });
+
+test('the PDF redactor mounts on its route with no egress', async ({ page }) => {
+  const offOrigin: string[] = [];
+  page.on('request', (req) => {
+    const url = new URL(req.url());
+    if (url.origin !== ORIGIN && url.protocol !== 'data:' && url.protocol !== 'blob:') {
+      offOrigin.push(req.url());
+    }
+  });
+  await page.goto('/#/redact');
+  await expect(page.locator('#dropzone')).toBeVisible();
+  await expect(page.locator('#status')).toContainText('pdf.js'); // the redactor's engine line
+  await page.waitForLoadState('networkidle');
+  expect(offOrigin, `unexpected off-origin requests: ${offOrigin.join(', ')}`).toEqual([]);
+});

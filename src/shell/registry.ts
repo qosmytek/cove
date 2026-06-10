@@ -11,7 +11,15 @@ const compress: Tool = {
   load: () => import('../tools/compress'),
 };
 
-export const tools: Tool[] = [compress];
+const redact: Tool = {
+  id: 'redact',
+  title: 'Cove Redact',
+  route: 'redact',
+  summary: 'Black out a PDF on your device.',
+  load: () => import('../tools/redact'),
+};
+
+export const tools: Tool[] = [compress, redact];
 
 /** The tool shown when the route is empty or unknown. */
 export const defaultTool: Tool = compress;
