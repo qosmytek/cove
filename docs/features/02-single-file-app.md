@@ -1,7 +1,7 @@
 # 02 · Single-File App
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
-> **Section:** [Features](./README.md) · **In v1:** ⏳ Phase 2
+> **Status:** Draft · **Last updated:** 2026-06-09 · **Owner:** Victor Senna Seleimend
+> **Section:** [Features](./README.md) · **In v1:** ⏳ Phase 3 (deferred from Phase 2)
 > ← [Feature index](./README.md)
 
 ## Summary
@@ -44,6 +44,10 @@ single-threaded, in-memory path. See [Progressive Enhancement](../quality/progre
 [Local-First Core](./01-local-first-core.md) · [Tech Stack](../architecture/tech-stack.md) ·
 [ADR-0004 single-file build target](../architecture/decisions/0004-single-file-build-target.md).
 
-## Open questions
-- Which tool ships as the first single-file build (likely lighter than the video compressor)?
-- Inline WASM, or document a "keep this file beside the HTML" pattern for big engines?
+## Status & open questions
+**Deferred from Phase 2 toward Phase 3** ([Roadmap](../product/roadmap.md)): a single-file build of the
+*compressor* is awkward — its ffmpeg cores are too large to inline — so this lands better once a
+lighter tool exists. Current leaning on the open questions:
+- **Which tool first:** a lighter tool than the video compressor (e.g. the PDF redactor).
+- **Inline vs. beside:** inline JS/CSS and small WASM; keep large engines (the ffmpeg cores) *beside*
+  the HTML (or hosted-only) — base64-inlining them breaks both the "single file" spirit and the budget.

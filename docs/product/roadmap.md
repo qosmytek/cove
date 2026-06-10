@@ -67,6 +67,14 @@ A54 run, offline/install, and a screen-reader + keyboard pass.
 [single-file build](../features/02-single-file-app.md) target, telemetry-free quality monitoring, and
 an internal "how to add a tool" guide.
 
+**Status (2026-06-09): implemented (single-file build deferred).** The shell now hosts tools behind a
+small contract — a hash router with lazy-loaded, code-split tools, a shell-owned capability-detection
+service plus a shared fallback-notice region, an [add-a-tool guide](../engineering/adding-a-tool.md),
+and **telemetry-free quality monitoring** (a voluntary, on-device "Copy diagnostics" report — no
+counters, no egress). The compressor runs through the same contract the next tools will. The
+**[single-file build](../features/02-single-file-app.md)** (ADR-0004) is **deferred toward Phase 3**,
+where a lighter tool is a better first single-file target than the compressor.
+
 ## Phase 3 — Second & third tools
 **Goal:** validate the platform by adding tools with *different* technical spines.
 **Candidates (prioritize by validated demand):**
