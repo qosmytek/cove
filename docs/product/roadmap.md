@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-10 · **Owner:** Victor Senna Seleimend
 > **Section:** [Product](./) · ← [Documentation Index](../README.md)
 
 A phased plan that follows the brief's advice: **prototype the riskiest technical piece first**, prove
@@ -77,9 +77,11 @@ where a lighter tool is a better first single-file target than the compressor.
 
 ## Phase 3 — Second & third tools
 **Goal:** validate the platform by adding tools with *different* technical spines.
-**Candidates (prioritize by validated demand):**
-- **PDF redactor** — high privacy resonance, lighter WASM.
-- **CSV ↔ JSON ↔ Parquet converter** → opens the door to
+**Lead tool — decided (2026-06-10): the [PDF redactor](../features/09-pdf-redactor.md)** ("Cove
+Redact") — high privacy resonance, lighter WASM than the compressor, and the first
+[single-file](../features/02-single-file-app.md) build target (unblocking the deferred ADR-0004 work).
+**Then (prioritize by validated demand):**
+- **CSV ↔ JSON ↔ Parquet converter** ("Cove Convert") → opens the door to
   [big-data exploration](../features/05-big-data-exploration.md) (DuckDB-WASM).
 
 ## Phase 4 — On-device AI & vault (opt-in, heavy)

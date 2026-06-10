@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADRs)
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-10 · **Owner:** Victor Senna Seleimend
 > **Section:** [Architecture](../) · ← [Documentation Index](../../README.md)
 
 We record significant or contested architectural decisions as short, numbered ADRs. When a decision
@@ -21,6 +21,7 @@ Each ADR follows **Context → Decision → Consequences**, with a status line. 
 | [0007](./0007-video-engine-webcodecs-with-ffmpeg-fallback.md) | Video engine: WebCodecs fast path + `ffmpeg.wasm` fallback | Accepted |
 | [0008](./0008-no-ui-framework.md) | No UI framework for v1 (vanilla TS + native DOM) | Accepted |
 | [0009](./0009-test-and-ci-tooling.md) | Test & CI tooling (Vitest, Playwright, Lighthouse CI, GitHub Actions) | Accepted |
+| [0010](./0010-pdf-redaction-engine.md) | PDF redaction engine & strategy: rasterize-and-rebuild (`pdf.js` + `pdf-lib`) | Accepted |
 
 ## Proposed / future
 - _None open — the UI-framework and test/CI-tooling questions are now decided (ADR-0008, ADR-0009)._

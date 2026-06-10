@@ -1,6 +1,6 @@
 # 02 · Single-File App
 
-> **Status:** Draft · **Last updated:** 2026-06-09 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-10 · **Owner:** Victor Senna Seleimend
 > **Section:** [Features](./README.md) · **In v1:** ⏳ Phase 3 (deferred from Phase 2)
 > ← [Feature index](./README.md)
 
@@ -47,7 +47,12 @@ single-threaded, in-memory path. See [Progressive Enhancement](../quality/progre
 ## Status & open questions
 **Deferred from Phase 2 toward Phase 3** ([Roadmap](../product/roadmap.md)): a single-file build of the
 *compressor* is awkward — its ffmpeg cores are too large to inline — so this lands better once a
-lighter tool exists. Current leaning on the open questions:
-- **Which tool first:** a lighter tool than the video compressor (e.g. the PDF redactor).
-- **Inline vs. beside:** inline JS/CSS and small WASM; keep large engines (the ffmpeg cores) *beside*
-  the HTML (or hosted-only) — base64-inlining them breaks both the "single file" spirit and the budget.
+lighter tool exists.
+- **Which tool first — decided (2026-06-10):** the [PDF redactor](./09-pdf-redactor.md) leads Phase 3
+  and is the first single-file target — lighter than the compressor, with no `SharedArrayBuffer`
+  dependency.
+- **Inline vs. beside — decided (2026-06-10):** for the redactor, **inline** — `pdf.js` + `pdf-lib` are
+  light, JS-only, and need no `SharedArrayBuffer`
+  ([ADR-0010](../architecture/decisions/0010-pdf-redaction-engine.md)), so the whole tool fits one
+  `.html` (the worker is inlined as a blob URL). The general rule stands: inline JS/CSS and small WASM,
+  keep a *heavy* engine (the ffmpeg cores) beside or hosted-only.
