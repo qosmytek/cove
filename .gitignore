@@ -52,6 +52,8 @@ secrets/
 *.onnx
 # Vendored ffmpeg.wasm cores, copied from node_modules by scripts/copy-ffmpeg-core.mjs
 public/ffmpeg/
+# Vendored pdf.js standard fonts, copied from node_modules by scripts/copy-pdfjs-standard-fonts.mjs
+public/pdfjs/
 
 # --- Editors / OS ---
 .vscode/*

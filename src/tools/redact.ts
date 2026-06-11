@@ -259,7 +259,12 @@ export function mount(ctx: ToolContext): () => void {
     fileinfo.textContent = file.name;
 
     try {
-      loadingTask = getDocument({ data: originalBytes.slice() });
+      loadingTask = getDocument({
+        data: originalBytes.slice(),
+        // Vendored same-origin (scripts/copy-pdfjs-standard-fonts.mjs) so non-embedded base-14
+        // fonts render faithfully with zero egress — fetched only when a PDF actually needs them.
+        standardFontDataUrl: '/pdfjs/standard_fonts/',
+      });
       const doc = await loadingTask.promise;
       fileinfo.textContent = `${file.name} · ${doc.numPages} page${doc.numPages === 1 ? '' : 's'}`;
       for (let i = 1; i <= doc.numPages; i++) {

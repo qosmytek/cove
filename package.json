@@ -9,9 +9,10 @@
   "description": "Cove — on-device video compressor (WebCodecs + ffmpeg.wasm fallback).",
   "scripts": {
     "copy-core": "node scripts/copy-ffmpeg-core.mjs",
-    "predev": "npm run copy-core",
+    "copy-pdfjs": "node scripts/copy-pdfjs-standard-fonts.mjs",
+    "predev": "npm run copy-core && npm run copy-pdfjs",
     "dev": "vite",
-    "prebuild": "npm run copy-core",
+    "prebuild": "npm run copy-core && npm run copy-pdfjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
