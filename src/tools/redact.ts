@@ -7,7 +7,7 @@ import { GlobalWorkerOptions, getDocument, type PDFDocumentLoadingTask, version 
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { formatDiagnostics } from '../diagnostics';
 import type { Command } from '../palette';
-import { rebuildRedacted } from '../redaction';
+import { type Box, nudgeBox, rebuildRedacted } from '../redaction';
 import { canSaveInPlace, saveOutput } from '../save';
 import type { ToolContext } from '../shell/tool';
 
@@ -25,7 +25,7 @@ const TEMPLATE = `
 
   <section id="panel" aria-label="Redaction" hidden>
     <p id="fileinfo" class="fileinfo"></p>
-    <p class="dz-sub">Drag across a page to black out a region; click a box to remove it. Or tick “Redact entire page”.</p>
+    <p class="dz-sub">Drag to black out a region — or press “Add box”, then arrow keys to move, Shift+arrows to resize, Delete to remove. Click a box to remove it; or tick “Redact entire page”.</p>
     <div class="actions">
       <button id="redact" class="primary" type="button">Redact &amp; save</button>
       <button id="clear" type="button">Clear marks</button>
@@ -43,15 +43,9 @@ const TEMPLATE = `
   </details>
 `;
 
-interface Rect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
 interface PageState {
   canvas: HTMLCanvasElement;
-  marks: Rect[];
+  marks: Box[];
   wholePage: boolean;
   marksEl: HTMLDivElement;
 }
@@ -117,11 +111,18 @@ export function mount(ctx: ToolContext): () => void {
     marksEl.setAttribute('aria-label', `Page ${index + 1} — drag to mark a redaction`);
     wrap.append(canvas, marksEl);
 
-    const tools = document.createElement('label');
+    // Keyboard entry point (RD-1): a real button adds a box you then nudge with the arrow keys.
+    const tools = document.createElement('div');
     tools.className = 'page-tools';
+    const addBoxBtn = document.createElement('button');
+    addBoxBtn.type = 'button';
+    addBoxBtn.className = 'add-box';
+    addBoxBtn.textContent = `Add box to page ${index + 1}`;
+    const wholeLabel = document.createElement('label');
     const whole = document.createElement('input');
     whole.type = 'checkbox';
-    tools.append(whole, document.createTextNode(` Redact entire page ${index + 1}`));
+    wholeLabel.append(whole, document.createTextNode(` Redact entire page ${index + 1}`));
+    tools.append(addBoxBtn, wholeLabel);
 
     fig.append(wrap, tools);
     pagesEl.append(fig);
@@ -131,10 +132,71 @@ export function mount(ctx: ToolContext): () => void {
     whole.addEventListener('change', () => {
       state.wholePage = whole.checked;
       marksEl.classList.toggle('whole', whole.checked);
+      addBoxBtn.disabled = whole.checked; // a whole-page redaction already covers every region
     });
 
-    // Pointer-drag to draw a rectangle. Coords are stored in canvas pixels and rendered as
-    // percentages so the marks track the responsive canvas.
+    const place = (el: HTMLElement, r: Box): void => {
+      el.style.left = `${(r.x / canvas.width) * 100}%`;
+      el.style.top = `${(r.y / canvas.height) * 100}%`;
+      el.style.width = `${(r.w / canvas.width) * 100}%`;
+      el.style.height = `${(r.h / canvas.height) * 100}%`;
+    };
+    const removeMark = (r: Box, el: HTMLElement): void => {
+      const i = state.marks.indexOf(r);
+      if (i >= 0) state.marks.splice(i, 1);
+      el.remove();
+    };
+    // A redaction box: focusable so it can be moved/resized/removed entirely by keyboard (RD-1),
+    // and click-to-remove for the mouse. The geometry is pure (nudgeBox), unit-tested.
+    const addMark = (r: Box): HTMLDivElement => {
+      state.marks.push(r);
+      const el = document.createElement('div');
+      el.className = 'mark';
+      el.tabIndex = 0;
+      el.title = 'Click to remove';
+      el.setAttribute('aria-roledescription', 'redaction box');
+      el.setAttribute(
+        'aria-label',
+        `Redaction box on page ${index + 1}. Arrow keys move; Shift plus arrows resize; Delete removes.`,
+      );
+      place(el, r);
+      el.addEventListener('pointerdown', (e) => {
+        e.stopPropagation(); // don't start a new drag
+        removeMark(r, el);
+      });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          removeMark(r, el);
+          addBoxBtn.focus();
+          return;
+        }
+        const step = Math.max(4, Math.round(canvas.width * 0.01));
+        const next = nudgeBox(r, e.key, e.shiftKey, canvas, step);
+        if (next !== r) {
+          e.preventDefault();
+          Object.assign(r, next);
+          place(el, r);
+        }
+      });
+      marksEl.appendChild(el);
+      return el;
+    };
+
+    addBoxBtn.addEventListener('click', () => {
+      const el = addMark({
+        x: Math.round(canvas.width * 0.3),
+        y: Math.round(canvas.height * 0.44),
+        w: Math.round(canvas.width * 0.4),
+        h: Math.round(canvas.height * 0.08),
+      });
+      el.focus();
+      statusMsg.textContent =
+        'Added a box — arrow keys move it, Shift+arrows resize, Delete removes.';
+    });
+
+    // Pointer-drag to draw a box. Coords are stored in canvas pixels and rendered as percentages
+    // so the marks track the responsive canvas.
     let startX = 0;
     let startY = 0;
     let preview: HTMLDivElement | null = null;
@@ -144,27 +206,7 @@ export function mount(ctx: ToolContext): () => void {
       const y = ((clientY - rect.top) / rect.height) * canvas.height;
       return [Math.max(0, Math.min(canvas.width, x)), Math.max(0, Math.min(canvas.height, y))];
     };
-    const place = (el: HTMLElement, r: Rect): void => {
-      el.style.left = `${(r.x / canvas.width) * 100}%`;
-      el.style.top = `${(r.y / canvas.height) * 100}%`;
-      el.style.width = `${(r.w / canvas.width) * 100}%`;
-      el.style.height = `${(r.h / canvas.height) * 100}%`;
-    };
-    const addMark = (r: Rect): void => {
-      state.marks.push(r);
-      const el = document.createElement('div');
-      el.className = 'mark';
-      el.title = 'Click to remove';
-      place(el, r);
-      el.addEventListener('pointerdown', (e) => {
-        e.stopPropagation(); // don't start a new drag
-        const i = state.marks.indexOf(r);
-        if (i >= 0) state.marks.splice(i, 1);
-        el.remove();
-      });
-      marksEl.appendChild(el);
-    };
-    const rectFrom = (x: number, y: number): Rect => ({
+    const boxFrom = (x: number, y: number): Box => ({
       x: Math.min(startX, x),
       y: Math.min(startY, y),
       w: Math.abs(x - startX),
@@ -183,12 +225,12 @@ export function mount(ctx: ToolContext): () => void {
     marksEl.addEventListener('pointermove', (e) => {
       if (!preview) return;
       const [x, y] = toCanvas(e.clientX, e.clientY);
-      place(preview, rectFrom(x, y));
+      place(preview, boxFrom(x, y));
     });
     marksEl.addEventListener('pointerup', (e) => {
       if (!preview) return;
       const [x, y] = toCanvas(e.clientX, e.clientY);
-      const r = rectFrom(x, y);
+      const r = boxFrom(x, y);
       preview.remove();
       preview = null;
       if (r.w > MIN_MARK && r.h > MIN_MARK) addMark(r);

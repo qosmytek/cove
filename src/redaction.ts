@@ -34,3 +34,40 @@ export async function rebuildRedacted(
   out.setCreator('Cove Redact');
   return out.save();
 }
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
+
+/**
+ * Move or resize `box` by one keyboard step, clamped within `bounds` and to a minimum size of
+ * `step`. Plain arrows move; Shift+arrows resize (Right/Down grow, Left/Up shrink). Returns a new
+ * box, or the original reference for keys it does not handle. Pure — unit-tested; the redactor's
+ * keyboard handler (RD-1) wires it to the DOM.
+ */
+export function nudgeBox(
+  box: Box,
+  key: string,
+  shift: boolean,
+  bounds: { width: number; height: number },
+  step: number,
+): Box {
+  const { x, y, w, h } = box;
+  if (shift) {
+    if (key === 'ArrowRight') return { x, y, w: clamp(w + step, step, bounds.width - x), h };
+    if (key === 'ArrowLeft') return { x, y, w: clamp(w - step, step, bounds.width - x), h };
+    if (key === 'ArrowDown') return { x, y, w, h: clamp(h + step, step, bounds.height - y) };
+    if (key === 'ArrowUp') return { x, y, w, h: clamp(h - step, step, bounds.height - y) };
+    return box;
+  }
+  if (key === 'ArrowRight') return { x: clamp(x + step, 0, bounds.width - w), y, w, h };
+  if (key === 'ArrowLeft') return { x: clamp(x - step, 0, bounds.width - w), y, w, h };
+  if (key === 'ArrowDown') return { x, y: clamp(y + step, 0, bounds.height - h), w, h };
+  if (key === 'ArrowUp') return { x, y: clamp(y - step, 0, bounds.height - h), w, h };
+  return box;
+}

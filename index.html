@@ -98,7 +98,11 @@
       .mark { position: absolute; background: #000; }
       .mark:not(.preview) { cursor: pointer; }
       .mark.preview { background: #0008; outline: 1px solid #fff8; }
-      .page-tools { display: flex; align-items: center; gap: 0.4rem; margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--muted); }
+      .page-tools { display: flex; align-items: center; gap: 0.6rem; margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--muted); }
+      .page-tools .add-box { font: inherit; font-size: 0.85rem; padding: 0.2rem 0.6rem; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+      .page-tools .add-box:hover:not(:disabled), .page-tools .add-box:focus-visible { border-color: var(--accent); }
+      .page-tools .add-box:disabled { opacity: 0.5; cursor: default; }
+      .mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
     </style>
   </head>
   <body>

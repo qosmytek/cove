@@ -84,11 +84,10 @@ Redact") — high privacy resonance, lighter WASM than the compressor, and the f
 [rasterize-and-rebuild spike](../engineering/phase-3-redaction-spike.md) proved redacted content is
 unrecoverable (no text/vector/image survives), untouched pages keep their text, and source metadata is
 dropped — validating [ADR-0010](../architecture/decisions/0010-pdf-redaction-engine.md) before UI.
-**Build (2026-06-10):** the redactor ships behind the tool contract — `pdf.js` render with drag /
-whole-page marking, the rebuild core (unit-tested for RD-2/RD-6, `tests/redact.test.ts`), File System
-Access save, and ⌘K navigation between tools; the heavy `pdf.js` bundle stays lazy and off the
-precache. Pending: real-browser/e2e verification of the marking UI and richer keyboard region
-selection.
+**Build (2026-06-10):** the redactor ships behind the tool contract — `pdf.js` render with mouse or
+keyboard region marking (RD-1), the rebuild core (unit-tested for RD-2/RD-6, `tests/redact.test.ts`),
+File System Access save, and ⌘K navigation between tools; the heavy `pdf.js` bundle stays lazy and off
+the precache. Pending: real-browser/e2e verification of the marking UI.
 **Then (prioritize by validated demand):**
 - **CSV ↔ JSON ↔ Parquet converter** ("Cove Convert") → opens the door to
   [big-data exploration](../features/05-big-data-exploration.md) (DuckDB-WASM).

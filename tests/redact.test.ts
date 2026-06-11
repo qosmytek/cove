@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { describe, expect, it } from 'vitest';
-import { rebuildRedacted } from '../src/redaction';
+import { nudgeBox, rebuildRedacted } from '../src/redaction';
 
 // The redactor's core guarantee (RD-2 / RD-6 / risk R10): a redacted page is rebuilt as a
 // flattened raster, so its content is unrecoverable, while untouched pages keep their text and
@@ -69,5 +69,52 @@ describe('rebuildRedacted (RD-2 / RD-6)', () => {
     const outText = await extractText(out);
     expect(outText[0]).toContain(SECRET);
     expect(outText[1]).toContain(KEEP);
+  });
+});
+
+describe('nudgeBox (RD-1 keyboard region control)', () => {
+  const bounds = { width: 1000, height: 800 };
+  const base = { x: 100, y: 100, w: 200, h: 100 };
+
+  it('moves the box with arrow keys', () => {
+    expect(nudgeBox(base, 'ArrowRight', false, bounds, 10)).toEqual({
+      x: 110,
+      y: 100,
+      w: 200,
+      h: 100,
+    });
+    expect(nudgeBox(base, 'ArrowLeft', false, bounds, 10)).toEqual({
+      x: 90,
+      y: 100,
+      w: 200,
+      h: 100,
+    });
+    expect(nudgeBox(base, 'ArrowDown', false, bounds, 10)).toEqual({
+      x: 100,
+      y: 110,
+      w: 200,
+      h: 100,
+    });
+    expect(nudgeBox(base, 'ArrowUp', false, bounds, 10)).toEqual({ x: 100, y: 90, w: 200, h: 100 });
+  });
+
+  it('resizes the box with Shift+arrows', () => {
+    expect(nudgeBox(base, 'ArrowRight', true, bounds, 10)).toMatchObject({ w: 210, h: 100 });
+    expect(nudgeBox(base, 'ArrowUp', true, bounds, 10)).toMatchObject({ w: 200, h: 90 });
+  });
+
+  it('clamps movement to the page edges', () => {
+    expect(nudgeBox({ x: 0, y: 0, w: 200, h: 100 }, 'ArrowLeft', false, bounds, 10).x).toBe(0);
+    expect(nudgeBox({ x: 800, y: 0, w: 200, h: 100 }, 'ArrowRight', false, bounds, 10).x).toBe(800);
+  });
+
+  it('keeps a minimum size and stays within bounds when resizing', () => {
+    expect(nudgeBox({ x: 0, y: 0, w: 10, h: 100 }, 'ArrowLeft', true, bounds, 10).w).toBe(10);
+    expect(nudgeBox({ x: 900, y: 0, w: 100, h: 100 }, 'ArrowRight', true, bounds, 10).w).toBe(100);
+  });
+
+  it('returns the same box for keys it does not handle', () => {
+    expect(nudgeBox(base, 'Enter', false, bounds, 10)).toBe(base);
+    expect(nudgeBox(base, 'a', true, bounds, 10)).toBe(base);
   });
 });
