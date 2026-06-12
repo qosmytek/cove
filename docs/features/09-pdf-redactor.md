@@ -93,7 +93,8 @@ inlines everything for `file://` use; standard fonts are omitted there. CI-green
 + build + size; the heavy `pdf.js` bundle is lazy and excluded from the precache). The marking UI and a
 `file://` run of the single-file build are **manually verified** (zero egress; opening from `file://`
 logs a non-fatal cross-origin **error** during pdf.js worker setup — see
-[feature 02](./02-single-file-app.md)). **Pending:** an automated e2e for the marking interaction.
+[feature 02](./02-single-file-app.md)). An **e2e** covers the load → mark → redact → save flow in a real
+browser, and CI builds the single file (`build:single`) and asserts it stays self-contained.
 
 ## Open questions
 - **Text-preserving redaction** (keep a searchable layer on redacted pages) — revisit MuPDF-WASM *iff*

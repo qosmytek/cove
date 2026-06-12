@@ -90,7 +90,7 @@ File System Access save, and ⌘K navigation between tools; the heavy `pdf.js` b
 the precache. The **single-file `.html` build** (ADR-0004) now ships too — `npm run build:single`
 inlines everything (incl. the pdf.js worker) into one `dist-single/redact.html` for `file://` use,
 realizing the item deferred from Phase 2. The marking UI and a `file://` run are manually verified
-(zero egress); an automated e2e for the marking UI is still pending.
+(zero egress); an **e2e** covers the load → mark → save flow, and CI builds the single file.
 **Then (prioritize by validated demand):**
 - **CSV ↔ JSON ↔ Parquet converter** ("Cove Convert") → opens the door to
   [big-data exploration](../features/05-big-data-exploration.md) (DuckDB-WASM).
