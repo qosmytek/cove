@@ -13,6 +13,8 @@ export default defineConfig({
   preview: { headers: crossOriginIsolation },
   // ffmpeg.wasm uses workers + import.meta.url tricks that don't survive dep pre-bundling.
   optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'] },
+  // Hosted build: the single-file flag is off (vite.config.single.ts turns it on).
+  define: { __SINGLE_FILE__: 'false' },
   plugins: [
     // Offline PWA (FR-P5). injectManifest = our own SW (src/sw.ts) with Workbox's precache
     // manifest injected. Updates install quietly and take over on the next launch (no prompt).

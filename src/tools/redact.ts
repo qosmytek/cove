@@ -4,14 +4,16 @@
 // content carries no recoverable text/vector/image — validated by the Phase 3 spike. The rebuild
 // itself lives in redaction.ts (DOM-free, unit-tested); this module owns rendering + marking.
 import { GlobalWorkerOptions, getDocument, type PDFDocumentLoadingTask, version } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker&inline';
 import { formatDiagnostics } from '../diagnostics';
 import type { Command } from '../palette';
 import { type Box, nudgeBox, rebuildRedacted } from '../redaction';
 import { canSaveInPlace, saveOutput } from '../save';
 import type { ToolContext } from '../shell/tool';
 
-GlobalWorkerOptions.workerSrc = workerUrl;
+// Inline the pdf.js worker (a blob URL, not a separate file) so the single-file build (ADR-0004)
+// carries no external dependency, and the hosted build needs no special worker-asset path.
+GlobalWorkerOptions.workerPort = new PdfWorker();
 
 const RENDER_SCALE = 2; // px per point — the display + export resolution
 const MIN_MARK = 3; // px; ignore stray taps
@@ -262,8 +264,9 @@ export function mount(ctx: ToolContext): () => void {
       loadingTask = getDocument({
         data: originalBytes.slice(),
         // Vendored same-origin (scripts/copy-pdfjs-standard-fonts.mjs) so non-embedded base-14
-        // fonts render faithfully with zero egress — fetched only when a PDF actually needs them.
-        standardFontDataUrl: '/pdfjs/standard_fonts/',
+        // fonts render faithfully with zero egress — fetched only when a PDF needs them. Omitted
+        // in the single-file build (no server to serve them); embedded fonts are unaffected.
+        ...(__SINGLE_FILE__ ? {} : { standardFontDataUrl: '/pdfjs/standard_fonts/' }),
       });
       const doc = await loadingTask.promise;
       fileinfo.textContent = `${file.name} · ${doc.numPages} page${doc.numPages === 1 ? '' : 's'}`;
