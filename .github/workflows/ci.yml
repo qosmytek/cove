@@ -20,6 +20,11 @@ jobs:
       - run: npm test # Vitest unit/integration
       - run: npm run build
       - run: npm run size # size-limit: shell within budget, no engine in entry
+      - run: npm run build:single # single-file redactor (ADR-0004)
+      - name: Assert the single file is self-contained
+        run: |
+          test "$(ls dist-single | wc -l)" -eq 1
+          ! grep -qE '<(script[^>]*\bsrc|link[^>]*\bhref)=' dist-single/redact.html
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e # Playwright: smoke + no-egress + axe
       - run: npm run lhci # Lighthouse CI: shell performance budget
