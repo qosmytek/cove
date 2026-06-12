@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Status:** Draft · **Last updated:** 2026-06-10 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-11 · **Owner:** Victor Senna Seleimend
 > **Section:** [Product](./) · ← [Documentation Index](../README.md)
 
 A phased plan that follows the brief's advice: **prototype the riskiest technical piece first**, prove
@@ -92,8 +92,11 @@ inlines everything (incl. the pdf.js worker) into one `dist-single/redact.html` 
 realizing the item deferred from Phase 2. The marking UI and a `file://` run are manually verified
 (zero egress); an **e2e** covers the load → mark → save flow, and CI builds the single file.
 **Then (prioritize by validated demand):**
-- **CSV ↔ JSON ↔ Parquet converter** ("Cove Convert") → opens the door to
-  [big-data exploration](../features/05-big-data-exploration.md) (DuckDB-WASM).
+- **CSV ↔ JSON ↔ Parquet converter** ("Cove Convert") — **decided (2026-06-11): DuckDB-WASM**
+  ([ADR-0011](../architecture/decisions/0011-data-converter-engine.md)), spec
+  [feature 10](../features/10-data-converter.md); the on-ramp to
+  [big-data exploration](../features/05-big-data-exploration.md). Next: a riskiest-first Parquet
+  round-trip spike.
 
 ## Phase 4 — On-device AI & vault (opt-in, heavy)
 **Goal:** add the highest-value but heaviest capabilities, strictly behind explicit intent.

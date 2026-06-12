@@ -1,6 +1,6 @@
 # Features
 
-> **Status:** Draft · **Last updated:** 2026-06-10 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-11 · **Owner:** Victor Senna Seleimend
 > **Section:** Features · ← [Documentation Index](../README.md)
 
 One focused spec per capability. Each is self-contained and traces back to the
@@ -19,6 +19,7 @@ One focused spec per capability. Each is self-contained and traces back to the
 | 07 | Calm by Design | ✅ v1 | "Minimal" reading as unfinished | [open](./07-calm-design.md) |
 | 08 | Command Palette | ✅ v1 (should) | Discoverability | [open](./08-command-palette.md) |
 | 09 | PDF Redactor | ⏳ Phase 3 (lead) | Incomplete redaction (recoverable data) | [open](./09-pdf-redactor.md) |
+| 10 | Data Converter | ⏳ Phase 3 | Lossy / incorrect conversion | [open](./10-data-converter.md) |
 
 Legend: ✅ in v1 · ⏳ deferred — see [Roadmap](../product/roadmap.md) and [Scope](../product/scope.md).
 

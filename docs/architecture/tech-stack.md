@@ -1,6 +1,6 @@
 # Tech Stack
 
-> **Status:** Draft · **Last updated:** 2026-06-10 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-11 · **Owner:** Victor Senna Seleimend
 > **Section:** [Architecture](./) · ← [Documentation Index](../README.md)
 
 Chosen technologies and the reason for each. Significant or contested choices are also recorded as
@@ -16,7 +16,7 @@ Chosen technologies and the reason for each. Significant or contested choices ar
 | ---- | ------ | ----- |
 | Media (video compressor, v1) | **WebCodecs** (hardware) → **`ffmpeg.wasm`** fallback | Hardware H.264 fast path, capability-detected; falls back to `ffmpeg.wasm` ([ADR-0006](./decisions/0006-ffmpeg-build-and-threading.md)). See [ADR-0007](./decisions/0007-video-engine-webcodecs-with-ffmpeg-fallback.md). |
 | Documents (PDF redactor, Phase 3) | **`pdf.js`** (render) + **`pdf-lib`** (write) | Rasterize-and-rebuild for provable redaction; permissive licenses (Apache-2.0 / MIT), inlineable, no `SharedArrayBuffer`. See [ADR-0010](./decisions/0010-pdf-redaction-engine.md). |
-| Data / SQL | **DuckDB-WASM**, `sql.js` | Analytical SQL over Parquet — see [feature 05](../features/05-big-data-exploration.md). |
+| Data (convert + SQL) | **DuckDB-WASM** | One engine: CSV/JSON/Parquet conversion ([feature 10](../features/10-data-converter.md) · [ADR-0011](./decisions/0011-data-converter-engine.md)) and analytical SQL over Parquet ([feature 05](../features/05-big-data-exploration.md)). |
 | Python libraries | **Pyodide** | Only if/when a tool needs the Python ecosystem. |
 | On-device AI | **`transformers.js`** / **WebLLM** on **WebGPU** | Phase 4; weights cached after first load. |
 

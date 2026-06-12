@@ -1,6 +1,6 @@
 # 05 · Big-Data Exploration
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-11 · **Owner:** Victor Senna Seleimend
 > **Section:** [Features](./README.md) · **In v1:** ⏳ Phase 3
 > ← [Feature index](./README.md)
 
@@ -44,5 +44,7 @@ dataset size with a clear message when memory is insufficient.
 [Command Palette](./08-command-palette.md).
 
 ## Open questions
-- Ship the CSV ↔ JSON ↔ Parquet **converter** first as the on-ramp to this feature?
-- Default memory ceiling and paging strategy on the reference device?
+- **Resolved (2026-06-11):** the [CSV ↔ JSON ↔ Parquet converter](./10-data-converter.md) ("Cove
+  Convert") ships first as the on-ramp, on the **same DuckDB-WASM engine**
+  ([ADR-0011](../architecture/decisions/0011-data-converter-engine.md)).
+- Default memory ceiling and paging strategy on the reference device (shared with the converter).

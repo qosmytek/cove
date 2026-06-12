@@ -1,7 +1,7 @@
 # 02 · Single-File App
 
 > **Status:** Draft · **Last updated:** 2026-06-11 · **Owner:** Victor Senna Seleimend
-> **Section:** [Features](./README.md) · **In v1:** Phase 3 — built (`npm run build:single`); offline run pending verification
+> **Section:** [Features](./README.md) · **In v1:** Phase 3 — built & verified (single-file redactor runs from `file://` with zero egress)
 > ← [Feature index](./README.md)
 
 ## Summary
