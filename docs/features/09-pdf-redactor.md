@@ -87,9 +87,13 @@ base-14 standard fonts vendored **same-origin** for fidelity — zero egress, fe
 needs them); region marking by mouse (drag) **or keyboard** — “Add box”, then arrow keys to move,
 Shift+arrows to resize, Delete to remove (**RD-1**) — plus a “Redact entire page” toggle; the DOM-free
 rebuild core (`src/redaction.ts`, unit-tested for RD-2/RD-6, with `nudgeBox` covering the keyboard
-geometry); File System Access save (RD-5); and ⌘K navigation between tools. CI-green (core tests +
-typecheck + build + size; the heavy `pdf.js` bundle is lazy and excluded from the precache).
-**Pending:** real-browser / e2e verification of the marking interaction.
+geometry); File System Access save (RD-5); and ⌘K navigation between tools. A **single-file** build
+(`npm run build:single` → `dist-single/redact.html`, [ADR-0004](../architecture/decisions/0004-single-file-build-target.md))
+inlines everything for `file://` use; standard fonts are omitted there. CI-green (core tests + typecheck
++ build + size; the heavy `pdf.js` bundle is lazy and excluded from the precache). The marking UI and a
+`file://` run of the single-file build are **manually verified** (zero egress; opening from `file://`
+logs a non-fatal cross-origin **error** during pdf.js worker setup — see
+[feature 02](./02-single-file-app.md)). **Pending:** an automated e2e for the marking interaction.
 
 ## Open questions
 - **Text-preserving redaction** (keep a searchable layer on redacted pages) — revisit MuPDF-WASM *iff*

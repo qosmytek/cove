@@ -16,5 +16,7 @@ heavy engines may remain hosted-PWA-only.
 - ⚠️ **No code-splitting** — it must stay a focused utility (per the brief).
 - ⚠️ `file://` may lack cross-origin isolation → single-threaded fallback
   ([ADR-0002](./0002-web-workers-for-compute.md)).
-- 🔗 Realized by [Single-File App](../../features/02-single-file-app.md); deferred to Phase 2
-  ([Roadmap](../../product/roadmap.md)).
+- 🔗 **Realized in Phase 3** by the [PDF redactor](../../features/09-pdf-redactor.md)'s single-file
+  build (`vite.config.single.ts` · `npm run build:single`) — see
+  [Single-File App](../../features/02-single-file-app.md). The pdf.js worker is inlined (`?worker&inline`
+  blob) and a `__SINGLE_FILE__` flag drops the same-origin font URL that `file://` can't serve.

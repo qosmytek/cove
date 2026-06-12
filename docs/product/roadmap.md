@@ -87,7 +87,10 @@ dropped — validating [ADR-0010](../architecture/decisions/0010-pdf-redaction-e
 **Build (2026-06-10):** the redactor ships behind the tool contract — `pdf.js` render with mouse or
 keyboard region marking (RD-1), the rebuild core (unit-tested for RD-2/RD-6, `tests/redact.test.ts`),
 File System Access save, and ⌘K navigation between tools; the heavy `pdf.js` bundle stays lazy and off
-the precache. Pending: real-browser/e2e verification of the marking UI.
+the precache. The **single-file `.html` build** (ADR-0004) now ships too — `npm run build:single`
+inlines everything (incl. the pdf.js worker) into one `dist-single/redact.html` for `file://` use,
+realizing the item deferred from Phase 2. The marking UI and a `file://` run are manually verified
+(zero egress); an automated e2e for the marking UI is still pending.
 **Then (prioritize by validated demand):**
 - **CSV ↔ JSON ↔ Parquet converter** ("Cove Convert") → opens the door to
   [big-data exploration](../features/05-big-data-exploration.md) (DuckDB-WASM).
