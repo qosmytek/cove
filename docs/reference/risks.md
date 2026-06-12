@@ -1,6 +1,6 @@
 # Risk Register
 
-> **Status:** Draft · **Last updated:** 2026-06-10 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-11 · **Owner:** Victor Senna Seleimend
 > **Section:** [Reference](./) · ← [Documentation Index](../README.md)
 
 Top risks, their impact, and how we mitigate them. The biggest by far is **payload weight**.
@@ -69,6 +69,15 @@ Likelihood × Impact (each Low / Med / High). Owner: Victor Senna Seleimend; rev
   ([ADR-0010](../architecture/decisions/0010-pdf-redaction-engine.md) /
   [PDF Redactor](../features/09-pdf-redactor.md)).
 
+### R11 — Lossy or incorrect data conversion 🟠 *(enters Phase 3)*
+- **Impact:** Med/High — a converter that silently coerces types, loses precision, or drops rows
+  produces wrong data the user may trust; erodes the tool's credibility.
+- **Likelihood:** Med — type inference (CSV has no types), integer/float precision, and JSON nesting
+  are the usual traps.
+- **Mitigation:** pin sensible inference defaults and disclose them; **verify round-trips in tests**
+  (CSV → Parquet → CSV preserves rows and values) — [Data Converter](../features/10-data-converter.md) /
+  [ADR-0011](../architecture/decisions/0011-data-converter-engine.md).
+
 ## Review
 Revisit this register at each [phase](../product/roadmap.md) boundary, and whenever a new capability is
 added.
@@ -85,3 +94,8 @@ SW-registration assertion**. R1 stays the top watch as Phase 3 opens: the **PDF 
 tool partly *because* its engine is lighter than ffmpeg, and it becomes the first
 [single-file](../features/02-single-file-app.md) `file://` target (R1 + R4). New for Phase 3: **R10**
 (incomplete redaction), above.
+
+**Phase 3 — data converter (2026-06-11):** the converter ("Cove Convert") adds **DuckDB-WASM** (several
+MB), so R1 (payload) applies — it is lazy/intent-gated and **not** a single-file target
+([ADR-0011](../architecture/decisions/0011-data-converter-engine.md)). New: **R11** (lossy/incorrect
+conversion), above; R9 (memory on large data) becomes active for the first time.
