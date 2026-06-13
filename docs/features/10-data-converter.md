@@ -72,8 +72,10 @@ engine and the json/parquet extensions both vendored same-origin and lazy-loaded
 SQL + format detection are pure and unit-tested (`src/conversion.ts`); the round-trip **and** the
 self-hosted (zero-CDN) extension loading are spike-validated
 ([phase-3-converter-spike](../engineering/phase-3-converter-spike.md)). CI-green (unit tests, typecheck,
-build, size); the engine + extensions are lazy and excluded from the precache. **Pending:** real-browser
-/ e2e verification of the in-browser DuckDB worker flow.
+build, size); the engine + extensions are lazy and excluded from the precache. A **standing e2e**
+(`e2e/convert.spec.ts`) drives the real app through a CSV → Parquet → CSV round-trip and asserts
+**zero off-origin requests** — making DC-7 and the zero-egress criterion permanent guards (real-browser
+verified).
 
 ## Open questions
 - Default CSV type inference (and an override UI)?

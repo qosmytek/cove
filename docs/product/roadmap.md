@@ -101,7 +101,7 @@ realizing the item deferred from Phase 2. The marking UI and a `file://` run are
   **Build (2026-06-11):** `src/tools/convert.ts` ships behind the tool contract — single-threaded `eh`
   DuckDB-WASM in a Web Worker; engine **and** json/parquet extensions vendored same-origin (extensions
   via `custom_extension_repository`, never the CDN) so conversion is zero-egress. Lazy/off-precache;
-  conversion logic unit-tested; self-host loading spike-validated. Pending: real-browser/e2e.
+  conversion logic unit-tested; round-trip + zero egress held by a standing e2e (`e2e/convert.spec.ts`).
 
 ## Phase 4 — On-device AI & vault (opt-in, heavy)
 **Goal:** add the highest-value but heaviest capabilities, strictly behind explicit intent.
