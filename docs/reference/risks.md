@@ -99,3 +99,10 @@ tool partly *because* its engine is lighter than ffmpeg, and it becomes the firs
 ≈7.7 MB gzipped), so R1 (payload) applies — it is lazy/intent-gated and **not** a single-file target
 ([ADR-0011](../architecture/decisions/0011-data-converter-engine.md)). New: **R11** (lossy/incorrect
 conversion), above; R9 (memory on large data) becomes active for the first time.
+
+**Update (2026-06-13):** JSON/Parquet are DuckDB *extensions* that DuckDB autoloads from a CDN by
+default — a latent egress hole. Closed by vendoring them same-origin (single-threaded `eh`; the
+multi-threaded `coi` build can't link them). Both fidelity (DC-7) and the zero-egress claim are now
+held by a standing **converter e2e** (`e2e/convert.spec.ts`), not just the spike. One maintenance
+watch: the extension version is pinned to the `@duckdb/duckdb-wasm` build and guarded by a build-time
+tripwire (`scripts/fetch-duckdb-extensions.mjs`) — re-validate on upgrade.
