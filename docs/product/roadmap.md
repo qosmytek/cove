@@ -95,8 +95,10 @@ realizing the item deferred from Phase 2. The marking UI and a `file://` run are
 - **CSV ↔ JSON ↔ Parquet converter** ("Cove Convert") — **decided (2026-06-11): DuckDB-WASM**
   ([ADR-0011](../architecture/decisions/0011-data-converter-engine.md)), spec
   [feature 10](../features/10-data-converter.md); the on-ramp to
-  [big-data exploration](../features/05-big-data-exploration.md). Next: a riskiest-first Parquet
-  round-trip spike.
+  [big-data exploration](../features/05-big-data-exploration.md).
+  **Spike (2026-06-11): PASS** — DuckDB-WASM round-trips CSV/Parquet/JSON losslessly (engine ~35 MB,
+  ≈7.7 MB gzipped); see [the spike](../engineering/phase-3-converter-spike.md). Next: build
+  `src/tools/convert.ts`.
 
 ## Phase 4 — On-device AI & vault (opt-in, heavy)
 **Goal:** add the highest-value but heaviest capabilities, strictly behind explicit intent.

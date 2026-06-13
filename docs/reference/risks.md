@@ -95,7 +95,7 @@ tool partly *because* its engine is lighter than ffmpeg, and it becomes the firs
 [single-file](../features/02-single-file-app.md) `file://` target (R1 + R4). New for Phase 3: **R10**
 (incomplete redaction), above.
 
-**Phase 3 — data converter (2026-06-11):** the converter ("Cove Convert") adds **DuckDB-WASM** (several
-MB), so R1 (payload) applies — it is lazy/intent-gated and **not** a single-file target
+**Phase 3 — data converter (2026-06-11):** the converter ("Cove Convert") adds **DuckDB-WASM** (~35 MB,
+≈7.7 MB gzipped), so R1 (payload) applies — it is lazy/intent-gated and **not** a single-file target
 ([ADR-0011](../architecture/decisions/0011-data-converter-engine.md)). New: **R11** (lossy/incorrect
 conversion), above; R9 (memory on large data) becomes active for the first time.

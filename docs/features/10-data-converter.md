@@ -27,8 +27,9 @@ runs real SQL over it.
 - **Conversion fidelity (risk [R11](../reference/risks.md)):** type inference and precision — CSV has no
   types, integer widths and timestamps can coerce, JSON nesting vs. flat columns. Pick sensible
   defaults, disclose them, and **verify round-trips** in tests.
-- **Payload (R1):** DuckDB-WASM is several MB — lazy + intent-gated like every engine. Too heavy to
-  inline, so this tool is **not** a single-file build (hosted PWA only).
+- **Payload (R1):** DuckDB-WASM is **~35 MB uncompressed (≈7.7 MB gzipped)**, ffmpeg-class — lazy +
+  intent-gated, size disclosed, cached on first use. Too heavy to inline, so this tool is **not** a
+  single-file build (hosted PWA only).
 - **Memory (R9):** very large files — DuckDB streams/spills via OPFS, but cap with a clear message.
 - **Privacy:** local-file conversion touches **no network**. (Remote-data querying is
   [feature 05](./05-big-data-exploration.md), not this tool.)

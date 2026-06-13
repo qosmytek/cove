@@ -33,9 +33,10 @@ before any UI.
   **on-ramp** to [feature 05](../../features/05-big-data-exploration.md)'s analytical SQL.
 - ✅ Zero egress for local-file conversion; runs in a worker (60fps main thread); `SharedArrayBuffer`
   accelerates it where cross-origin isolation is available, with a single-threaded fallback.
-- ⚠️ **Payload (R1)** — DuckDB-WASM is several MB; lazy- and intent-gated like the ffmpeg/pdf.js
-  engines. **Too heavy to inline, so Cove Convert is *not* a single-file target**
-  ([ADR-0004](./0004-single-file-build-target.md)); it is hosted-PWA-only for v1.
+- ⚠️ **Payload (R1)** — DuckDB-WASM is **~35 MB uncompressed (≈7.7 MB gzipped)**, ffmpeg-class
+  (measured in the [spike](../../engineering/phase-3-converter-spike.md)); lazy- and intent-gated with
+  its size disclosed, cached on first use. **Too heavy to inline, so Cove Convert is *not* a single-file
+  target** ([ADR-0004](./0004-single-file-build-target.md)); it is hosted-PWA-only for v1.
 - ⚠️ **Conversion fidelity (R11)** — type inference and precision (CSV → typed columns, integer width,
   timestamps, JSON nesting) can silently lose or coerce data; pin sensible defaults and verify
   round-trips.
