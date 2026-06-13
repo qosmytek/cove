@@ -19,7 +19,15 @@ const redact: Tool = {
   load: () => import('../tools/redact'),
 };
 
-export const tools: Tool[] = [compress, redact];
+const convert: Tool = {
+  id: 'convert',
+  title: 'Cove Convert',
+  route: 'convert',
+  summary: 'Convert CSV, JSON, and Parquet on your device.',
+  load: () => import('../tools/convert'),
+};
+
+export const tools: Tool[] = [compress, redact, convert];
 
 /** The tool shown when the route is empty or unknown. */
 export const defaultTool: Tool = compress;

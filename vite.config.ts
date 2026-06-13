@@ -12,7 +12,7 @@ export default defineConfig({
   server: { headers: crossOriginIsolation },
   preview: { headers: crossOriginIsolation },
   // ffmpeg.wasm uses workers + import.meta.url tricks that don't survive dep pre-bundling.
-  optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'] },
+  optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', '@duckdb/duckdb-wasm'] },
   // Hosted build: the single-file flag is off (vite.config.single.ts turns it on).
   define: { __SINGLE_FILE__: 'false' },
   plugins: [
@@ -37,13 +37,19 @@ export default defineConfig({
       pwaAssets: { config: true, overrideManifestIcons: true },
       injectManifest: {
         // Precache the light shell only; heavy engines are cached on first use (sw.ts) — the
-        // ffmpeg cores (public/ffmpeg) and the redactor's pdf.js bundle (redact-*.js; its .mjs
-        // worker already falls outside globPatterns). Keeps every visitor's install small (R1).
-        // The web manifest is precached by the plugin itself; don't also glob it, or the
-        // pwaAssets icon-injection produces a second entry with a different revision and
+        // ffmpeg cores (public/ffmpeg), the redactor's pdf.js bundle (redact-*.js), and the
+        // converter's DuckDB engine + extensions (public/duckdb, duckdb-ext, convert-*.js). Keeps install
+        // small (R1). The web manifest is precached by the plugin itself; don't also glob it, or
+        // the pwaAssets icon-injection produces a second entry with a different revision and
         // workbox throws add-to-cache-list-conflicting-entries (SW registration then fails).
         globPatterns: ['**/*.{html,css,js,svg}'],
-        globIgnores: ['ffmpeg/**', 'assets/redact-*.js'],
+        globIgnores: [
+          'ffmpeg/**',
+          'assets/redact-*.js',
+          'duckdb/**',
+          'duckdb-ext/**',
+          'assets/convert-*.js',
+        ],
       },
       devOptions: { enabled: false },
     }),

@@ -10,9 +10,11 @@
   "scripts": {
     "copy-core": "node scripts/copy-ffmpeg-core.mjs",
     "copy-pdfjs": "node scripts/copy-pdfjs-standard-fonts.mjs",
-    "predev": "npm run copy-core && npm run copy-pdfjs",
+    "copy-duckdb": "node scripts/copy-duckdb.mjs",
+    "fetch-duckdb-extensions": "node scripts/fetch-duckdb-extensions.mjs",
+    "predev": "npm run copy-core && npm run copy-pdfjs && npm run copy-duckdb && npm run fetch-duckdb-extensions",
     "dev": "vite",
-    "prebuild": "npm run copy-core && npm run copy-pdfjs",
+    "prebuild": "npm run copy-core && npm run copy-pdfjs && npm run copy-duckdb && npm run fetch-duckdb-extensions",
     "build": "tsc && vite build",
     "build:single": "vite build --config vite.config.single.ts",
     "preview": "vite preview",
@@ -26,6 +28,7 @@
     "lhci": "lhci autorun"
   },
   "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.33.1-dev45.0",
     "@ffmpeg/core": "^0.12.6",
     "@ffmpeg/core-mt": "^0.12.6",
     "@ffmpeg/ffmpeg": "^0.12.10",

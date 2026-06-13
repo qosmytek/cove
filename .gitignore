@@ -55,6 +55,10 @@ secrets/
 public/ffmpeg/
 # Vendored pdf.js standard fonts, copied from node_modules by scripts/copy-pdfjs-standard-fonts.mjs
 public/pdfjs/
+# Vendored DuckDB-WASM engine, copied from node_modules by scripts/copy-duckdb.mjs
+public/duckdb/
+# Vendored DuckDB json/parquet extensions, downloaded by scripts/fetch-duckdb-extensions.mjs
+public/duckdb-ext/
 
 # --- Editors / OS ---
 .vscode/*
