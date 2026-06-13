@@ -93,7 +93,7 @@ export function mount(ctx: ToolContext): () => void {
   statusEl.textContent = `engine: DuckDB-WASM (~${ENGINE_MB} MB, on first convert) · save-in-place: ${canSaveInPlace()}`;
   ctx.setCapabilityNotice({
     level: 'info',
-    text: `Conversion runs entirely on your device — nothing is uploaded. The ~${ENGINE_MB} MB engine downloads once on the first conversion, then is cached.`,
+    text: `Conversion runs entirely on your device — nothing is uploaded. The ~${ENGINE_MB} MB engine (plus a small format extension) downloads on the first conversion, then is cached.`,
   });
 
   let selectedFile: File | null = null;
@@ -141,8 +141,8 @@ export function mount(ctx: ToolContext): () => void {
     if (
       !db &&
       !confirm(
-        `This downloads the ~${ENGINE_MB} MB DuckDB engine once (then cached) and runs entirely on ` +
-          'your device — nothing is uploaded. Continue?',
+        `This downloads the ~${ENGINE_MB} MB DuckDB engine (plus a small format extension) once ` +
+          '(then cached) and runs entirely on your device — nothing is uploaded. Continue?',
       )
     ) {
       return;
