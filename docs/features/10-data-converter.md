@@ -21,15 +21,19 @@ runs real SQL over it.
   `COPY … TO` (CSV / JSON / Parquet).
 - Local file I/O via the **File System Access API / OPFS**; **save** the result the same way (download
   fallback). No network for local conversion.
-- The DuckDB-WASM bundle is vendored **same-origin** and **lazy-loaded on intent**, its size disclosed.
+- The single-threaded **`eh`** engine is vendored **same-origin** and **lazy-loaded on intent**, size
+  disclosed. JSON/Parquet are DuckDB extensions (not in the core wasm); they're **vendored same-origin
+  too** and loaded via `custom_extension_repository` — never DuckDB's default CDN — so conversion stays
+  zero-egress and works offline.
 
 ## What to watch out for
 - **Conversion fidelity (risk [R11](../reference/risks.md)):** type inference and precision — CSV has no
   types, integer widths and timestamps can coerce, JSON nesting vs. flat columns. Pick sensible
   defaults, disclose them, and **verify round-trips** in tests.
-- **Payload (R1):** DuckDB-WASM is **~35 MB uncompressed (≈7.7 MB gzipped)**, ffmpeg-class — lazy +
-  intent-gated, size disclosed, cached on first use. Too heavy to inline, so this tool is **not** a
-  single-file build (hosted PWA only).
+- **Payload (R1):** the `eh` engine is **~35 MB (≈7.7 MB gzipped)**, ffmpeg-class; the json + parquet
+  extensions add **~4 MB** (lazy, on the first JSON/Parquet convert). Vendored same-origin, intent-gated,
+  size disclosed, cached on first use. Too heavy to inline, so this tool is **not** a single-file build
+  (hosted PWA only).
 - **Memory (R9):** very large files — DuckDB streams/spills via OPFS, but cap with a clear message.
 - **Privacy:** local-file conversion touches **no network**. (Remote-data querying is
   [feature 05](./05-big-data-exploration.md), not this tool.)
@@ -44,9 +48,10 @@ runs real SQL over it.
 - **DC-7** **Verify round-trips** in tests (e.g. CSV → Parquet → CSV preserves rows and values).
 
 ## Capability detection & fallback
-Best with `SharedArrayBuffer` (cross-origin isolation) for multi-threaded DuckDB; fall back to
-single-threaded. File System Access API with `<input>` + download fallback. See
-[Progressive Enhancement](../quality/progressive-enhancement.md).
+The converter forces the single-threaded **`eh`** DuckDB build: the multi-threaded `coi` build can't
+link the json/parquet extensions it needs (shared-memory mismatch), so `eh` is the working path
+([ADR-0011](../architecture/decisions/0011-data-converter-engine.md)). File System Access API with
+`<input>` + download fallback. See [Progressive Enhancement](../quality/progressive-enhancement.md).
 
 ## Acceptance criteria
 - [ ] A CSV → Parquet → CSV round-trip preserves rows and values.
@@ -58,6 +63,17 @@ single-threaded. File System Access API with `<input>` + download fallback. See
 [ADR-0011](../architecture/decisions/0011-data-converter-engine.md) ·
 [Command Palette](./08-command-palette.md) · on-ramp to
 [Big-Data Exploration](./05-big-data-exploration.md).
+
+## Build status (2026-06-11)
+v1 ships behind the [tool contract](../engineering/adding-a-tool.md): pick a CSV/JSON/Parquet file →
+choose a target → convert → save, with the single-threaded **`eh` DuckDB-WASM in a Web Worker** —
+engine and the json/parquet extensions both vendored same-origin and lazy-loaded on first convert
+(extensions loaded via `custom_extension_repository`, never the CDN), size disclosed. The conversion
+SQL + format detection are pure and unit-tested (`src/conversion.ts`); the round-trip **and** the
+self-hosted (zero-CDN) extension loading are spike-validated
+([phase-3-converter-spike](../engineering/phase-3-converter-spike.md)). CI-green (unit tests, typecheck,
+build, size); the engine + extensions are lazy and excluded from the precache. **Pending:** real-browser
+/ e2e verification of the in-browser DuckDB worker flow.
 
 ## Open questions
 - Default CSV type inference (and an override UI)?
