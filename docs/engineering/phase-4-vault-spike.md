@@ -21,10 +21,31 @@ argon2id over the grid and prints a median-of-3 timing table, then sweeps PBKDF2
 matching iteration count. Serve it (e.g. `npx serve spike`) and open on the **physical A54** over LAN;
 record the medians.
 
-## Outcome (pending — run on the A54)
-- [ ] Chosen argon2id params (m / t / p) with median derive-time on the A54.
-- [ ] PBKDF2-fallback iteration count for the same target.
-- [ ] Confirm unlock stays responsive (derivation off the main thread) and memory fits the A54 budget (R9).
+## Outcome (2026-06-14): provisional — desktop at 6× CPU throttle
+The physical A54 wasn't to hand, so the grid ran on a **desktop CPU-throttled 6×** — a reasonable stand-in
+for a mid-range phone (likely *pessimistic* on raw CPU, but it doesn't model the phone's lower memory
+bandwidth, so the high-memory rows carry the most proxy→device uncertainty). Treat as provisional and
+spot-check on the A54 at build time. Medians of 3:
 
-Once measured, the params land in the vault implementation and this section records the numbers — the way
-[Phase 0](./phase-0-measurement.md) recorded its engine measurements.
+| Argon2id (m / t / p) | median ms |
+| --- | --- |
+| 19 MiB / 2 / 1 | **779** |
+| 19 MiB / 3 / 1 | 1214 |
+| 32 MiB / 2 / 1 | 1379 |
+| 46 MiB / 1 / 1 | **997** |
+| 46 MiB / 2 / 1 | 2067 |
+| 64 MiB / 2 / 1 | 2783 |
+| 64 MiB / 3 / 1 | 4046 |
+
+PBKDF2-HMAC-SHA-256 fallback: 300k → 142 ms · 600k → 245 ms · **1M → 413 ms** · 1.5M → 608 ms.
+
+**Provisional params** (within the ~1 s budget, favoring memory-hardness):
+- **Argon2id: m = 46 MiB, t = 1, p = 1** (~997 ms) — an OWASP-recommended profile, more memory-hard than
+  the 19 MiB/t2 floor. It sits at the budget edge and high-memory cost is the least predictable across the
+  proxy→phone gap, so **confirm on the A54**; fall back to **m = 19 MiB, t = 2, p = 1** (~779 ms) if the
+  device exceeds ~1.2 s.
+- **PBKDF2 fallback: 1,000,000 iterations** (~413 ms) — comfortably above the OWASP 600k floor, with
+  headroom for a slower device.
+
+Derivation runs off the main thread (Worker) regardless. These params land in the vault build; the one
+item still owed to this spike is a **build-time A54 spot-check** to confirm or nudge them.
