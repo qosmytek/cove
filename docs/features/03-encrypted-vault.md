@@ -1,6 +1,6 @@
 # 03 · Encrypted Vault
 
-> **Status:** Draft · **Last updated:** 2026-06-06 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-14 · **Owner:** Victor Senna Seleimend
 > **Section:** [Features](./README.md) · **In v1:** ⏳ Phase 4
 > ← [Feature index](./README.md)
 
@@ -13,9 +13,12 @@ Persistent, private data the user fully controls. Even if local storage or any f
 compromised, the attacker gets ciphertext.
 
 ## How we build it
-- Derive a key from the user's passphrase with **Argon2** (preferred) or **PBKDF2**.
-- Encrypt with **AES-GCM** via **Web Crypto**.
-- Persist **ciphertext** to **IndexedDB**. Plaintext exists only transiently in memory.
+- Derive a key-encryption key from the passphrase with **Argon2id** (WASM, via `hash-wasm`), falling
+  back to **PBKDF2-HMAC-SHA-256** (Web Crypto) where WASM can't run — never a silent downgrade. Params
+  are tuned on the reference device ([vault spike](../engineering/phase-4-vault-spike.md)).
+- That key wraps a per-vault **random data key**; records are encrypted with **AES-256-GCM** (Web Crypto),
+  a fresh IV each ([ADR-0012](../architecture/decisions/0012-encrypted-vault-crypto.md)).
+- Persist **ciphertext** to **IndexedDB**. Plaintext and keys exist only transiently in memory.
 - If sync is added: transmit **ciphertext only**, with short-lived tokens and least privilege. See
   [Privacy & Security](../quality/privacy-security.md).
 
@@ -33,8 +36,9 @@ compromised, the attacker gets ciphertext.
 - **EV-5** Communicate the recovery model (or its absence) explicitly in the UI.
 
 ## Capability detection & fallback
-Requires Web Crypto + IndexedDB (broadly available). Argon2 typically ships as WASM; fall back to a
-strong PBKDF2 iteration count if unavailable — **never a silent downgrade** of security.
+Requires Web Crypto + IndexedDB (broadly available). Argon2id ships as WASM; fall back to a high PBKDF2
+iteration count if unavailable — **never a silent downgrade** of security
+([ADR-0012](../architecture/decisions/0012-encrypted-vault-crypto.md)).
 
 ## Acceptance criteria
 - [ ] Stored bytes are ciphertext; no plaintext is observable at rest.
@@ -42,8 +46,14 @@ strong PBKDF2 iteration count if unavailable — **never a silent downgrade** of
 - [ ] If sync exists, captured traffic contains only ciphertext.
 
 ## Dependencies
-[Privacy & Security](../quality/privacy-security.md) · [Data Flow](../architecture/data-flow.md).
+[Privacy & Security](../quality/privacy-security.md) · [Data Flow](../architecture/data-flow.md) ·
+[ADR-0012](../architecture/decisions/0012-encrypted-vault-crypto.md) ·
+[Vault Spike](../engineering/phase-4-vault-spike.md).
 
 ## Open questions
-- Offer a recovery mechanism (e.g., a recovery code), or commit to zero-recovery by design?
-- Argon2 parameters (memory/time) tuned for a mid-range phone?
+- **Resolved (2026-06-14):** **zero-recovery by design** — a lost passphrase is unrecoverable and the
+  first-run UI says so up front; no recovery code in v1 (an opt-in offline one is
+  [backlog](../product/backlog.md)). See [ADR-0012](../architecture/decisions/0012-encrypted-vault-crypto.md).
+- **Resolved (2026-06-14):** Argon2id parameters come from the
+  [vault spike](../engineering/phase-4-vault-spike.md) on the reference A54 (secure-yet-tolerable), with
+  the PBKDF2-fallback count set independently.

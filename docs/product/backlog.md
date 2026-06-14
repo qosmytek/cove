@@ -62,4 +62,14 @@ shows a real gain, most likely under feature 05.
 
 [duckdb-wasm#1916]: https://github.com/duckdb/duckdb-wasm/issues/1916
 
+## Encrypted vault — optional offline recovery code
+
+*Deferred; v1 is **zero-recovery by design**
+([ADR-0012](../architecture/decisions/0012-encrypted-vault-crypto.md)).* If zero-recovery proves too
+harsh in practice, the escape hatch is an **opt-in** recovery code generated at setup: derive a second
+key-encryption key from the code and wrap the per-vault data key with it too, so **either** the
+passphrase *or* the code can unlock — staying zero-server and off by default. Cost: the dual-unlock
+key-wrapping (the envelope design in ADR-0012 already allows it) plus a careful first-run UX that doesn't
+lull users into treating the code as a casual backup.
+
 See also: [Roadmap](./roadmap.md) · [Performance Budget](../quality/performance-budget.md)
