@@ -27,7 +27,15 @@ const convert: Tool = {
   load: () => import('../tools/convert'),
 };
 
-export const tools: Tool[] = [compress, redact, convert];
+const notes: Tool = {
+  id: 'notes',
+  title: 'Cove Notes',
+  route: 'notes',
+  summary: 'Keep encrypted notes on your device.',
+  load: () => import('../tools/notes'),
+};
+
+export const tools: Tool[] = [compress, redact, convert, notes];
 
 /** The tool shown when the route is empty or unknown. */
 export const defaultTool: Tool = compress;
