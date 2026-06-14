@@ -109,6 +109,12 @@ realizing the item deferred from Phase 2. The marking UI and a `file://` run are
 the [encrypted vault](../features/03-encrypted-vault.md) for any data-keeping tool — with a clear
 recovery story, or a deliberate and well-communicated absence of one.
 
+**Status (2026-06-14): building, vault first.** The vault foundation
+([ADR-0012](../architecture/decisions/0012-encrypted-vault-crypto.md): Argon2id/AES-GCM, **zero-recovery**)
+plus **Cove Notes** — its first tool — ship behind the tool contract; the
+[vault spike](../engineering/phase-4-vault-spike.md) set provisional Argon2 params (A54 spot-check
+pending). On-device AI is the remaining Phase 4 capability.
+
 ## Post-Phase-4 — backlog
 Understood-but-unscheduled work — large-output handling (WebCodecs output streaming, a custom OPFS
 ffmpeg core) and WebCodecs audio decode/re-encode — is tracked in the [Backlog](./backlog.md).

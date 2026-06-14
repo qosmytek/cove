@@ -45,6 +45,15 @@ iteration count if unavailable — **never a silent downgrade** of security
 - [ ] Losing the passphrase makes data unrecoverable — and the UI warned the user up front.
 - [ ] If sync exists, captured traffic contains only ciphertext.
 
+## Build status (2026-06-14)
+**Cove Notes** ships as the vault's first tool (Phase 4): set a passphrase — with the blunt
+zero-recovery warning — then unlock and write notes encrypted on-device with the vault core
+(`src/vault.ts`), stored ciphertext-only in IndexedDB (`src/vault-store.ts`); title, body, and timestamp
+all sit inside the encrypted payload. The crypto is unit-tested and a standing e2e (`e2e/notes.spec.ts`)
+covers create → encrypt → lock/unlock (wrong-passphrase rejected) → reload-persistence →
+ciphertext-at-rest → zero egress. **Pending:** the build-time
+[A54 Argon2 spot-check](../engineering/phase-4-vault-spike.md) to confirm/nudge the 46 MiB/t1 params.
+
 ## Dependencies
 [Privacy & Security](../quality/privacy-security.md) · [Data Flow](../architecture/data-flow.md) ·
 [ADR-0012](../architecture/decisions/0012-encrypted-vault-crypto.md) ·
