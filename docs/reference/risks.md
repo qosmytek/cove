@@ -1,6 +1,6 @@
 # Risk Register
 
-> **Status:** Draft · **Last updated:** 2026-06-11 · **Owner:** Victor Senna Seleimend
+> **Status:** Draft · **Last updated:** 2026-06-14 · **Owner:** Victor Senna Seleimend
 > **Section:** [Reference](./) · ← [Documentation Index](../README.md)
 
 Top risks, their impact, and how we mitigate them. The biggest by far is **payload weight**.
@@ -78,6 +78,16 @@ Likelihood × Impact (each Low / Med / High). Owner: Victor Senna Seleimend; rev
   (CSV → Parquet → CSV preserves rows and values) — [Data Converter](../features/10-data-converter.md) /
   [ADR-0011](../architecture/decisions/0011-data-converter-engine.md).
 
+### R12 — AI model-weight provenance & egress 🟠 *(enters Phase 4)*
+- **Impact:** High — weights are large and must load from somewhere; the default behavior of model
+  libraries (e.g. `transformers.js`) is to autoload from a third-party hub CDN, which would breach the
+  local-first/offline promise and widen the supply-chain surface (cf. R7). It is the DuckDB-extension
+  egress trap again, at ~10× the size.
+- **Likelihood:** Med — it is the out-of-the-box behavior unless explicitly prevented.
+- **Mitigation:** vendor weights **same-origin** (or a single **explicit, disclosed, opt-in** download —
+  never silent), **pin + integrity-check** them, keep CSP `connect-src` tight, and cache for offline
+  reuse ([On-Device AI](../features/04-on-device-ai.md); the AI-runtime ADR will pin the choice).
+
 ## Review
 Revisit this register at each [phase](../product/roadmap.md) boundary, and whenever a new capability is
 added.
@@ -106,3 +116,15 @@ multi-threaded `coi` build can't link them). Both fidelity (DC-7) and the zero-e
 held by a standing **converter e2e** (`e2e/convert.spec.ts`), not just the spike. One maintenance
 watch: the extension version is pinned to the `@duckdb/duckdb-wasm` build and guarded by a build-time
 tripwire (`scripts/fetch-duckdb-extensions.mjs`) — re-validate on upgrade.
+
+**Phase 3 → 4 boundary (2026-06-14):** Phase 3 shipped three tools (compressor, redactor, converter),
+all CI-green; R10 (incomplete redaction) and R11 (lossy conversion) are mitigated by shipped code and
+standing tests. Phase 4 (lead: the encrypted vault, then on-device AI) shifts the register:
+- **R1 (payload) goes acute** — AI weights are **hundreds of MB**, the heaviest payload yet; the usual
+  discipline (lazy, intent-gated, size disclosed, cached, lighter fallback) holds with far less headroom.
+- **R3 (capability fragmentation)** activates for **WebGPU** — the AI feature depends on it, so the
+  fallback is designed before the feature.
+- **R5 (vault key management / data loss)** activates — the vault leads Phase 4; its **recovery model**
+  (a real mechanism vs. a deliberate, well-communicated zero-recovery) is settled up front.
+- **New — R12 (model-weight provenance & egress)**, above — the DuckDB-extension egress lesson applied
+  to AI weights.
