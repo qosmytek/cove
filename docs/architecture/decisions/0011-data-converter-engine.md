@@ -42,8 +42,9 @@ that the self-hosted extensions load with no CDN call, before any UI.
 - ✅ Runs in a [Web Worker](./0002-web-workers-for-compute.md), so the main thread stays responsive.
 - ⚙️ **Single-threaded `eh`, not multi-threaded `coi`** — the `coi` build can't link the extensions
   (the `wasm_threads` variant fails with a shared-memory mismatch) and the converter needs them, so we
-  force `eh`. Worker-thread parallelism (`coi`) is revisited if [feature 05](../../features/05-big-data-exploration.md)
-  needs it and the extension story allows.
+  force `eh`. The block is a tracked upstream bug ([duckdb-wasm#1916](https://github.com/duckdb/duckdb-wasm/issues/1916));
+  worker-thread parallelism (`coi`) — and how to unblock it — is parked in the
+  [backlog](../../product/backlog.md), gated on a measured need (likely [feature 05](../../features/05-big-data-exploration.md)).
 - ⚠️ **Payload (R1)** — the `eh` engine is **~35 MB uncompressed (≈7.7 MB gzipped)**, ffmpeg-class
   (measured in the [spike](../../engineering/phase-3-converter-spike.md)); the `json` + `parquet`
   extensions add **~4 MB**, fetched lazily on the first JSON/Parquet convert. All vendored same-origin,
