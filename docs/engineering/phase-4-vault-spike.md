@@ -21,11 +21,10 @@ argon2id over the grid and prints a median-of-3 timing table, then sweeps PBKDF2
 matching iteration count. Serve it (e.g. `npx serve spike`) and open on the **physical A54** over LAN;
 record the medians.
 
-## Outcome (2026-06-14): provisional — desktop at 6× CPU throttle
-The physical A54 wasn't to hand, so the grid ran on a **desktop CPU-throttled 6×** — a reasonable stand-in
-for a mid-range phone (likely *pessimistic* on raw CPU, but it doesn't model the phone's lower memory
-bandwidth, so the high-memory rows carry the most proxy→device uncertainty). Treat as provisional and
-spot-check on the A54 at build time. Medians of 3:
+## Outcome (2026-06-14): confirmed on the A54
+The grid first ran on a **desktop CPU-throttled 6×** (a stand-in for a mid-range phone), then the chosen
+setting was confirmed on the **physical A54** — which matched the proxy closely (predicted 997 ms,
+measured **1023 ms**), retroactively validating the throttled-desktop approach. Proxy medians of 3:
 
 | Argon2id (m / t / p) | median ms |
 | --- | --- |
@@ -39,13 +38,11 @@ spot-check on the A54 at build time. Medians of 3:
 
 PBKDF2-HMAC-SHA-256 fallback: 300k → 142 ms · 600k → 245 ms · **1M → 413 ms** · 1.5M → 608 ms.
 
-**Provisional params** (within the ~1 s budget, favoring memory-hardness):
-- **Argon2id: m = 46 MiB, t = 1, p = 1** (~997 ms) — an OWASP-recommended profile, more memory-hard than
-  the 19 MiB/t2 floor. It sits at the budget edge and high-memory cost is the least predictable across the
-  proxy→phone gap, so **confirm on the A54**; fall back to **m = 19 MiB, t = 2, p = 1** (~779 ms) if the
-  device exceeds ~1.2 s.
-- **PBKDF2 fallback: 1,000,000 iterations** (~413 ms) — comfortably above the OWASP 600k floor, with
-  headroom for a slower device.
+**Chosen params** (within the ~1 s unlock budget, favoring memory-hardness):
+- **Argon2id: m = 46 MiB, t = 1, p = 1** — **1023 ms on the A54** (an OWASP-recommended profile, more
+  memory-hard than the 19 MiB/t2 floor). ~1 s for a once-per-session unlock is acceptable, so we keep it
+  over the snappier 19 MiB/t2 alternative (~779 ms on the proxy).
+- **PBKDF2 fallback: 1,000,000 iterations** (~413 ms on the proxy) — comfortably above the OWASP 600k floor.
 
-Derivation runs off the main thread (Worker) regardless. These params land in the vault build; the one
-item still owed to this spike is a **build-time A54 spot-check** to confirm or nudge them.
+Derivation runs off the main thread regardless. These are the live defaults in `src/vault.ts`
+(`ARGON2_DEFAULTS` / `PBKDF2_DEFAULTS`); the spike is closed.

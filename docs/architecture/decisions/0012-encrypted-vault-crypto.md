@@ -17,8 +17,8 @@ mechanism** (e.g. an offline recovery code) vs. **zero-recovery by design**.
 ## Decision
 - **Key derivation: Argon2id** (WASM, via `hash-wasm`), with **PBKDF2-HMAC-SHA-256 via Web Crypto as the
   fallback** where WASM can't run — **never a silent downgrade**; the UI states which is in use. Params
-  are tuned on the reference device ([vault spike](../../engineering/phase-4-vault-spike.md)), starting
-  from OWASP argon2id floors.
+  are tuned on the reference device ([vault spike](../../engineering/phase-4-vault-spike.md)): **Argon2id
+  46 MiB / t1 / p1** (~1 s on the A54), PBKDF2-fallback 1,000,000 iterations.
 - **Cipher: AES-256-GCM via Web Crypto**, a fresh random 96-bit IV per record. The passphrase-derived key
   is a **key-encryption key** that wraps a per-vault **random data key** (envelope encryption) — so a
   passphrase change re-wraps the data key instead of re-encrypting every record.
